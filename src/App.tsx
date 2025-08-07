@@ -36,6 +36,19 @@ const App: React.FC = () => {
     status: 'Draft'
   });
 
+  const handleCreateContent = (e: React.FormEvent) => {
+    e.preventDefault();
+    const content = {
+      ...newContent,
+      id: contentItems.length + 1,
+      author: userAccounts.find(u => u.role === userRole)?.name || 'User',
+      date: new Date().toISOString().split('T')[0]
+    };
+    setContentItems([...contentItems, content]);
+    setNewContent({ title: '', type: 'Article', content: '', domain: 'Main Site', status: 'Draft' });
+    setShowContentForm(false);
+  };
+
   // User accounts with different access levels
   const userAccounts = [
     { email: 'owner@empire.core', role: 'owner', name: 'Empire Owner' },
