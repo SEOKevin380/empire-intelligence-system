@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, Database, TrendingUp, AlertTriangle, CheckCircle, Activity, Target, Zap, BarChart3, Settings, Eye, Shield, Globe, Users, DollarSign } from 'lucide-react';
+import { Brain, Database, TrendingUp, AlertTriangle, CheckCircle, Activity, Target, Zap, BarChart3, Settings, Eye, Shield, Globe, Users, DollarSign, Lock } from 'lucide-react';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<'owner' | 'manager' | 'team'>('team');
   const [activeModule, setActiveModule] = useState('dashboard');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -15,16 +16,36 @@ const App: React.FC = () => {
     uptime: 99.999,
     predictionsAccuracy: 0,
     competitorsTracked: 0,
-    opportunitiesValue: 0
+    opportunitiesValue: 0,
+    trafficData: 0,
+    conversionRate: 0,
+    activeUsers: 0
   });
+
+  // User accounts with different access levels
+  const userAccounts = [
+    { email: 'owner@empire.core', role: 'owner', name: 'Empire Owner' },
+    { email: 'manager@empire.core', role: 'manager', name: 'Empire Manager' },
+    { email: 'team@empire.core', role: 'team', name: 'Team Member' }
+  ];
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginEmail === 'empire@admin.core' || loginEmail === 'partner@empire.com') {
+    const user = userAccounts.find(u => u.email === loginEmail);
+    if (user) {
+      setUserRole(user.role as 'owner' | 'manager' | 'team');
       setIsLoggedIn(true);
     } else {
-      alert('Invalid credentials. Try: empire@admin.core');
+      alert('Invalid credentials. Try: owner@empire.core, manager@empire.core, or team@empire.core');
     }
+  };
+
+  // Permission system
+  const hasAccess = (feature: 'revenue' | 'traffic' | 'advanced') => {
+    if (userRole === 'owner') return true;
+    if (userRole === 'manager' && feature !== 'revenue') return true;
+    if (userRole === 'team' && feature !== 'revenue' && feature !== 'traffic') return true;
+    return false;
   };
 
   const modules = [
@@ -33,6 +54,24 @@ const App: React.FC = () => {
     { id: 'predictions', name: 'Prediction Engine', icon: TrendingUp, color: '#10b981' },
     { id: 'domains', name: 'Empire Domains', icon: Globe, color: '#f59e0b' },
   ];
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'owner': return '#dc2626';
+      case 'manager': return '#8b5cf6';
+      case 'team': return '#10b981';
+      default: return '#6b7280';
+    }
+  };
+
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case 'owner': return '👑 OWNER';
+      case 'manager': return '⚡ MANAGER';
+      case 'team': return '👤 TEAM';
+      default: return '👤 USER';
+    }
+  };
 
   if (!isLoggedIn) {
     return (
@@ -49,7 +88,7 @@ const App: React.FC = () => {
           backdropFilter: 'blur(10px)',
           borderRadius: '20px',
           padding: '40px',
-          width: '400px',
+          width: '450px',
           border: '1px solid rgba(255, 255, 255, 0.2)',
           boxShadow: '0 25px 50px rgba(0, 0, 0, 0.2)'
         }}>
@@ -58,7 +97,7 @@ const App: React.FC = () => {
             <h1 style={{ color: 'white', fontSize: '28px', fontWeight: 'bold', margin: '0 0 10px 0' }}>
               Empire Intelligence
             </h1>
-            <p style={{ color: '#e0e7ff', margin: '0' }}>Secure Access Portal</p>
+            <p style={{ color: '#e0e7ff', margin: '0' }}>Multi-Tier Access Portal</p>
           </div>
           
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -118,8 +157,18 @@ const App: React.FC = () => {
           </form>
           
           <div style={{ marginTop: '25px', textAlign: 'center', fontSize: '14px', color: '#e0e7ff' }}>
-            <p style={{ margin: '5px 0' }}>Demo Credentials:</p>
-            <p style={{ margin: '0', fontWeight: '500' }}>empire@admin.core</p>
+            <p style={{ margin: '5px 0', fontWeight: '600' }}>Demo Accounts:</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '10px' }}>
+              <p style={{ margin: '0', padding: '5px', background: 'rgba(220, 38, 38, 0.3)', borderRadius: '5px' }}>
+                👑 owner@empire.core
+              </p>
+              <p style={{ margin: '0', padding: '5px', background: 'rgba(139, 92, 246, 0.3)', borderRadius: '5px' }}>
+                ⚡ manager@empire.core
+              </p>
+              <p style={{ margin: '0', padding: '5px', background: 'rgba(16, 185, 129, 0.3)', borderRadius: '5px' }}>
+                👤 team@empire.core
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -128,28 +177,67 @@ const App: React.FC = () => {
 
   const renderDashboard = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+      {/* Access Level Notice */}
+      <div style={{
+        background: `linear-gradient(135deg, ${getRoleColor(userRole)}, ${getRoleColor(userRole)}dd)`,
+        borderRadius: '15px',
+        padding: '20px',
+        color: 'white',
+        textAlign: 'center'
+      }}>
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '600' }}>
+          {getRoleBadge(userRole)} ACCESS LEVEL
+        </h3>
+        <p style={{ margin: '0', fontSize: '14px', opacity: 0.9 }}>
+          {userRole === 'owner' && 'Full access to all revenue, traffic, and operational data'}
+          {userRole === 'manager' && 'Access to operational and traffic data (revenue restricted)'}
+          {userRole === 'team' && 'Access to operational data only (revenue & traffic restricted)'}
+        </p>
+      </div>
+
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
         gap: '20px' 
       }}>
-        <div style={{
-          background: 'linear-gradient(135deg, #10b981, #059669)',
-          borderRadius: '15px',
-          padding: '25px',
-          color: 'white'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Total Revenue</p>
-              <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold' }}>
-                ${stats.totalRevenue.toFixed(2)}
-              </p>
+        {/* Revenue Card - Owner Only */}
+        {hasAccess('revenue') ? (
+          <div style={{
+            background: 'linear-gradient(135deg, #10b981, #059669)',
+            borderRadius: '15px',
+            padding: '25px',
+            color: 'white'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Total Revenue</p>
+                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold' }}>
+                  ${stats.totalRevenue.toFixed(2)}
+                </p>
+              </div>
+              <DollarSign size={32} style={{ opacity: 0.8 }} />
             </div>
-            <DollarSign size={32} style={{ opacity: 0.8 }} />
           </div>
-        </div>
+        ) : (
+          <div style={{
+            background: 'linear-gradient(135deg, #6b7280, #4b5563)',
+            borderRadius: '15px',
+            padding: '25px',
+            color: 'white'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Total Revenue</p>
+                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Lock size={24} /> RESTRICTED
+                </p>
+              </div>
+              <DollarSign size={32} style={{ opacity: 0.5 }} />
+            </div>
+          </div>
+        )}
         
+        {/* Active Modules - All Users */}
         <div style={{
           background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
           borderRadius: '15px',
@@ -165,6 +253,7 @@ const App: React.FC = () => {
           </div>
         </div>
         
+        {/* System Uptime - All Users */}
         <div style={{
           background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
           borderRadius: '15px',
@@ -180,20 +269,40 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        <div style={{
-          background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-          borderRadius: '15px',
-          padding: '25px',
-          color: 'white'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Prediction Accuracy</p>
-              <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold' }}>{stats.predictionsAccuracy}%</p>
+        {/* Traffic Data - Owner & Manager Only */}
+        {hasAccess('traffic') ? (
+          <div style={{
+            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+            borderRadius: '15px',
+            padding: '25px',
+            color: 'white'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Active Users</p>
+                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold' }}>{stats.activeUsers}</p>
+              </div>
+              <Users size={32} style={{ opacity: 0.8 }} />
             </div>
-            <Target size={32} style={{ opacity: 0.8 }} />
           </div>
-        </div>
+        ) : (
+          <div style={{
+            background: 'linear-gradient(135deg, #6b7280, #4b5563)',
+            borderRadius: '15px',
+            padding: '25px',
+            color: 'white'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Traffic Data</p>
+                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Lock size={24} /> RESTRICTED
+                </p>
+              </div>
+              <Users size={32} style={{ opacity: 0.5 }} />
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{ 
@@ -201,66 +310,95 @@ const App: React.FC = () => {
         gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
         gap: '20px' 
       }}>
-        <div style={{
-          background: 'white',
-          borderRadius: '15px',
-          padding: '25px',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h3 style={{ 
-            fontSize: '18px', 
-            fontWeight: '600', 
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
+        {/* Revenue Intelligence - Owner Only */}
+        {hasAccess('revenue') ? (
+          <div style={{
+            background: 'white',
+            borderRadius: '15px',
+            padding: '25px',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
           }}>
-            <TrendingUp size={20} style={{ color: '#10b981' }} />
-            Revenue Intelligence
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{
+            <h3 style={{ 
+              fontSize: '18px', 
+              fontWeight: '600', 
+              marginBottom: '20px',
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '15px',
-              background: '#f9fafb',
-              borderRadius: '10px'
+              gap: '10px'
             }}>
-              <span>Domain Portfolio</span>
-              <span style={{ fontWeight: '600', color: '#6b7280' }}>
-                $0.00
-              </span>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '15px',
-              background: '#f9fafb',
-              borderRadius: '10px'
-            }}>
-              <span>Affiliate Network</span>
-              <span style={{ fontWeight: '600', color: '#6b7280' }}>
-                $0.00
-              </span>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '15px',
-              background: '#f9fafb',
-              borderRadius: '10px'
-            }}>
-              <span>Intelligence Services</span>
-              <span style={{ fontWeight: '600', color: '#6b7280' }}>
-                $0.00
-              </span>
+              <TrendingUp size={20} style={{ color: '#10b981' }} />
+              Revenue Intelligence
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: '#f9fafb',
+                borderRadius: '10px'
+              }}>
+                <span>Domain Portfolio</span>
+                <span style={{ fontWeight: '600', color: '#6b7280' }}>$0.00</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: '#f9fafb',
+                borderRadius: '10px'
+              }}>
+                <span>Affiliate Network</span>
+                <span style={{ fontWeight: '600', color: '#6b7280' }}>$0.00</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: '#f9fafb',
+                borderRadius: '10px'
+              }}>
+                <span>Intelligence Services</span>
+                <span style={{ fontWeight: '600', color: '#6b7280' }}>$0.00</span>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div style={{
+            background: 'white',
+            borderRadius: '15px',
+            padding: '25px',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+            textAlign: 'center'
+          }}>
+            <h3 style={{ 
+              fontSize: '18px', 
+              fontWeight: '600', 
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              color: '#6b7280'
+            }}>
+              <Lock size={20} />
+              Revenue Intelligence
+            </h3>
+            <div style={{
+              padding: '40px',
+              background: '#f9fafb',
+              borderRadius: '10px',
+              color: '#6b7280'
+            }}>
+              <Lock size={32} style={{ margin: '0 auto 10px auto', display: 'block' }} />
+              <p style={{ margin: '0', fontWeight: '500' }}>Owner Access Required</p>
+            </div>
+          </div>
+        )}
 
+        {/* Operational Intelligence - All Users */}
         <div style={{
           background: 'white',
           borderRadius: '15px',
@@ -276,7 +414,7 @@ const App: React.FC = () => {
             gap: '10px'
           }}>
             <Eye size={20} style={{ color: '#3b82f6' }} />
-            Market Intelligence
+            Operational Intelligence
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{
@@ -298,10 +436,8 @@ const App: React.FC = () => {
               background: '#f9fafb',
               borderRadius: '10px'
             }}>
-              <span>Market Opportunities</span>
-              <span style={{ fontWeight: '600', color: '#6b7280' }}>
-                $0.00
-              </span>
+              <span>Competitors Tracked</span>
+              <span style={{ fontWeight: '600', color: '#6b7280' }}>{stats.competitorsTracked}</span>
             </div>
             <div style={{
               display: 'flex',
@@ -348,7 +484,19 @@ const App: React.FC = () => {
             </h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <span style={{ fontSize: '14px', color: '#6b7280' }}>Welcome, Empire Admin</span>
+            <div style={{
+              background: getRoleColor(userRole),
+              color: 'white',
+              padding: '6px 12px',
+              borderRadius: '20px',
+              fontSize: '12px',
+              fontWeight: '600'
+            }}>
+              {getRoleBadge(userRole)}
+            </div>
+            <span style={{ fontSize: '14px', color: '#6b7280' }}>
+              Welcome, {userAccounts.find(u => u.role === userRole)?.name}
+            </span>
             <button
               onClick={() => setIsLoggedIn(false)}
               style={{
