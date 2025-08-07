@@ -9,13 +9,13 @@ const App: React.FC = () => {
 
   // Sample data for demonstration
   const [stats] = useState({
-    totalRevenue: 272000,
+    totalRevenue: 0,
     activeModules: 4,
-    domainsTracked: 5,
+    domainsTracked: 0,
     uptime: 99.999,
-    predictionsAccuracy: 94.7,
-    competitorsTracked: 847,
-    opportunitiesValue: 4700000
+    predictionsAccuracy: 0,
+    competitorsTracked: 0,
+    opportunitiesValue: 0
   });
 
   const handleLogin = (e: React.FormEvent) => {
@@ -143,7 +143,7 @@ const App: React.FC = () => {
             <div>
               <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Total Revenue</p>
               <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold' }}>
-                ${stats.totalRevenue.toLocaleString()}
+                ${stats.totalRevenue.toFixed(2)}
               </p>
             </div>
             <DollarSign size={32} style={{ opacity: 0.8 }} />
@@ -228,8 +228,8 @@ const App: React.FC = () => {
               borderRadius: '10px'
             }}>
               <span>Domain Portfolio</span>
-              <span style={{ fontWeight: '600', color: '#10b981' }}>
-                +${(stats.totalRevenue * 0.3).toLocaleString()}
+              <span style={{ fontWeight: '600', color: '#6b7280' }}>
+                $0.00
               </span>
             </div>
             <div style={{
@@ -241,8 +241,8 @@ const App: React.FC = () => {
               borderRadius: '10px'
             }}>
               <span>Affiliate Network</span>
-              <span style={{ fontWeight: '600', color: '#3b82f6' }}>
-                +${(stats.totalRevenue * 0.45).toLocaleString()}
+              <span style={{ fontWeight: '600', color: '#6b7280' }}>
+                $0.00
               </span>
             </div>
             <div style={{
@@ -254,8 +254,8 @@ const App: React.FC = () => {
               borderRadius: '10px'
             }}>
               <span>Intelligence Services</span>
-              <span style={{ fontWeight: '600', color: '#8b5cf6' }}>
-                +${(stats.totalRevenue * 0.25).toLocaleString()}
+              <span style={{ fontWeight: '600', color: '#6b7280' }}>
+                $0.00
               </span>
             </div>
           </div>
@@ -287,8 +287,8 @@ const App: React.FC = () => {
               background: '#f9fafb',
               borderRadius: '10px'
             }}>
-              <span>Competitors Tracked</span>
-              <span style={{ fontWeight: '600' }}>{stats.competitorsTracked}</span>
+              <span>Prediction Accuracy</span>
+              <span style={{ fontWeight: '600', color: '#6b7280' }}>{stats.predictionsAccuracy}%</span>
             </div>
             <div style={{
               display: 'flex',
@@ -299,8 +299,8 @@ const App: React.FC = () => {
               borderRadius: '10px'
             }}>
               <span>Market Opportunities</span>
-              <span style={{ fontWeight: '600', color: '#10b981' }}>
-                ${(stats.opportunitiesValue / 1000000).toFixed(1)}M
+              <span style={{ fontWeight: '600', color: '#6b7280' }}>
+                $0.00
               </span>
             </div>
             <div style={{
