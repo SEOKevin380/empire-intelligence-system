@@ -11,7 +11,7 @@ const App: React.FC = () => {
   // Sample data for demonstration
   const [stats] = useState({
     totalRevenue: 0,
-    activeModules: 4,
+    activeModules: 5,
     domainsTracked: 0,
     uptime: 99.999,
     predictionsAccuracy: 0,
@@ -20,6 +20,20 @@ const App: React.FC = () => {
     trafficData: 0,
     conversionRate: 0,
     activeUsers: 0
+  });
+
+  // Content system state
+  const [contentItems, setContentItems] = useState([
+    { id: 1, title: 'Welcome to Empire Intelligence', type: 'Article', status: 'Published', author: 'System', date: '2025-08-06', domain: 'Main Site' },
+    { id: 2, title: 'Getting Started Guide', type: 'Guide', status: 'Draft', author: 'Team Member', date: '2025-08-06', domain: 'Knowledge Base' }
+  ]);
+  const [showContentForm, setShowContentForm] = useState(false);
+  const [newContent, setNewContent] = useState({
+    title: '',
+    type: 'Article',
+    content: '',
+    domain: 'Main Site',
+    status: 'Draft'
   });
 
   // User accounts with different access levels
@@ -52,6 +66,7 @@ const App: React.FC = () => {
 
   const modules = [
     { id: 'dashboard', name: 'Command Center', icon: Brain, color: '#8b5cf6' },
+    { id: 'content', name: 'Content System', icon: Database, color: '#06b6d4' },
     { id: 'intelligence', name: 'Market Intelligence', icon: Eye, color: '#3b82f6' },
     { id: 'predictions', name: 'Prediction Engine', icon: TrendingUp, color: '#10b981' },
     { id: 'domains', name: 'Empire Domains', icon: Globe, color: '#f59e0b' },
@@ -567,13 +582,302 @@ const App: React.FC = () => {
               </h2>
               <p style={{ margin: '0', color: '#6b7280' }}>
                 {activeModule === 'dashboard' && 'Complete overview of your empire operations'}
+                {activeModule === 'content' && 'Create and manage content across all empire domains'}
                 {activeModule === 'intelligence' && 'Market intelligence and competitor analysis'}
                 {activeModule === 'predictions' && 'AI-powered market predictions and forecasts'}
                 {activeModule === 'domains' && 'Domain portfolio management and analytics'}
               </p>
             </div>
 
-            {activeModule === 'dashboard' && renderDashboard()}
+  const handleCreateContent = (e: React.FormEvent) => {
+    e.preventDefault();
+    const content = {
+      ...newContent,
+      id: contentItems.length + 1,
+      author: userAccounts.find(u => u.role === userRole)?.name || 'User',
+      date: new Date().toISOString().split('T')[0]
+    };
+    setContentItems([...contentItems, content]);
+    setNewContent({ title: '', type: 'Article', content: '', domain: 'Main Site', status: 'Draft' });
+    setShowContentForm(false);
+  };
+
+  const renderContentSystem = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+      {/* Content Actions Bar */}
+      <div style={{
+        background: 'white',
+        borderRadius: '15px',
+        padding: '20px',
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <h3 style={{ margin: '0', fontSize: '18px', fontWeight: '600', color: '#1f2937' }}>
+          Content Management
+        </h3>
+        <button
+          onClick={() => setShowContentForm(!showContentForm)}
+          style={{
+            background: '#06b6d4',
+            color: 'white',
+            padding: '10px 20px',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '500'
+          }}
+        >
+          + Create Content
+        </button>
+      </div>
+
+      {/* Content Creation Form */}
+      {showContentForm && (
+        <div style={{
+          background: 'white',
+          borderRadius: '15px',
+          padding: '25px',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+        }}>
+          <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+            Create New Content
+          </h4>
+          <form onSubmit={handleCreateContent} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <input
+                type="text"
+                placeholder="Content Title"
+                value={newContent.title}
+                onChange={(e) => setNewContent({...newContent, title: e.target.value})}
+                style={{
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '14px'
+                }}
+                required
+              />
+              <select
+                value={newContent.type}
+                onChange={(e) => setNewContent({...newContent, type: e.target.value})}
+                style={{
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="Article">Article</option>
+                <option value="Guide">Guide</option>
+                <option value="Tutorial">Tutorial</option>
+                <option value="Review">Review</option>
+                <option value="News">News</option>
+              </select>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <select
+                value={newContent.domain}
+                onChange={(e) => setNewContent({...newContent, domain: e.target.value})}
+                style={{
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="Main Site">Main Site</option>
+                <option value="Knowledge Base">Knowledge Base</option>
+                <option value="Blog">Blog</option>
+                <option value="Resources">Resources</option>
+                <option value="Landing Pages">Landing Pages</option>
+              </select>
+              <select
+                value={newContent.status}
+                onChange={(e) => setNewContent({...newContent, status: e.target.value})}
+                style={{
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '14px'
+                }}
+              >
+                <option value="Draft">Draft</option>
+                <option value="Review">Under Review</option>
+                <option value="Published">Published</option>
+              </select>
+            </div>
+            <textarea
+              placeholder="Content body..."
+              value={newContent.content}
+              onChange={(e) => setNewContent({...newContent, content: e.target.value})}
+              rows={4}
+              style={{
+                padding: '12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                fontSize: '14px',
+                resize: 'vertical'
+              }}
+              required
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="submit"
+                style={{
+                  background: '#10b981',
+                  color: 'white',
+                  padding: '12px 24px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                Create Content
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowContentForm(false)}
+                style={{
+                  background: '#6b7280',
+                  color: 'white',
+                  padding: '12px 24px',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Content List */}
+      <div style={{
+        background: 'white',
+        borderRadius: '15px',
+        padding: '25px',
+        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+      }}>
+        <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+          Content Library ({contentItems.length} items)
+        </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {contentItems.map((item) => (
+            <div
+              key={item.id}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
+                gap: '15px',
+                padding: '15px',
+                background: '#f9fafb',
+                borderRadius: '10px',
+                alignItems: 'center',
+                fontSize: '14px'
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: '600', color: '#1f2937' }}>{item.title}</div>
+                <div style={{ color: '#6b7280', fontSize: '12px' }}>by {item.author}</div>
+              </div>
+              <span style={{ color: '#6b7280' }}>{item.type}</span>
+              <span style={{ color: '#6b7280' }}>{item.domain}</span>
+              <span style={{
+                padding: '4px 8px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: '500',
+                background: item.status === 'Published' ? '#dcfce7' : item.status === 'Review' ? '#fef3c7' : '#f3f4f6',
+                color: item.status === 'Published' ? '#166534' : item.status === 'Review' ? '#92400e' : '#374151'
+              }}>
+                {item.status}
+              </span>
+              <span style={{ color: '#6b7280' }}>{item.date}</span>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <button style={{
+                  background: '#3b82f6',
+                  color: 'white',
+                  padding: '4px 8px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}>
+                  Edit
+                </button>
+                {hasAccess('revenue') && (
+                  <button style={{
+                    background: '#dc2626',
+                    color: 'white',
+                    padding: '4px 8px',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}>
+                    Delete
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Content Analytics - Only for Manager+ */}
+      {hasAccess('traffic') && (
+        <div style={{
+          background: 'white',
+          borderRadius: '15px',
+          padding: '25px',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+        }}>
+          <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+            Content Performance
+          </h4>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+            gap: '15px' 
+          }}>
+            <div style={{
+              padding: '15px',
+              background: '#f0f9ff',
+              borderRadius: '10px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0369a1' }}>2,450</div>
+              <div style={{ fontSize: '14px', color: '#6b7280' }}>Total Views</div>
+            </div>
+            <div style={{
+              padding: '15px',
+              background: '#f0fdf4',
+              borderRadius: '10px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#166534' }}>85%</div>
+              <div style={{ fontSize: '14px', color: '#6b7280' }}>Engagement Rate</div>
+            </div>
+            <div style={{
+              padding: '15px',
+              background: '#fefce8',
+              borderRadius: '10px',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ca8a04' }}>12</div>
+              <div style={{ fontSize: '14px', color: '#6b7280' }}>Published This Month</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
             
             {activeModule !== 'dashboard' && (
               <div style={{
