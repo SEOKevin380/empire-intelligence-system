@@ -3,7 +3,7 @@ import { Brain, Database, TrendingUp, AlertTriangle, CheckCircle, Activity, Targ
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<'owner' | 'manager' | 'team'>('team');
+  const [userRole, setUserRole] = useState<'owner' | 'manager' | 'team' | 'secret_admin'>('team');
   const [activeModule, setActiveModule] = useState('dashboard');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -26,14 +26,15 @@ const App: React.FC = () => {
   const userAccounts = [
     { email: 'owner@empire.core', role: 'owner', name: 'Empire Owner' },
     { email: 'manager@empire.core', role: 'manager', name: 'Empire Manager' },
-    { email: 'team@empire.core', role: 'team', name: 'Team Member' }
+    { email: 'team@empire.core', role: 'team', name: 'Team Member' },
+    { email: 'god@mode.system', role: 'secret_admin', name: 'System Administrator' }
   ];
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     const user = userAccounts.find(u => u.email === loginEmail);
     if (user) {
-      setUserRole(user.role as 'owner' | 'manager' | 'team');
+      setUserRole(user.role as 'owner' | 'manager' | 'team' | 'secret_admin');
       setIsLoggedIn(true);
     } else {
       alert('Invalid credentials. Try: owner@empire.core, manager@empire.core, or team@empire.core');
@@ -42,6 +43,7 @@ const App: React.FC = () => {
 
   // Permission system
   const hasAccess = (feature: 'revenue' | 'traffic' | 'advanced') => {
+    if (userRole === 'secret_admin') return true; // Secret admin has everything
     if (userRole === 'owner') return true;
     if (userRole === 'manager' && feature !== 'revenue') return true;
     if (userRole === 'team' && feature !== 'revenue' && feature !== 'traffic') return true;
@@ -57,6 +59,7 @@ const App: React.FC = () => {
 
   const getRoleColor = (role: string) => {
     switch (role) {
+      case 'secret_admin': return '#000000';
       case 'owner': return '#dc2626';
       case 'manager': return '#8b5cf6';
       case 'team': return '#10b981';
@@ -66,6 +69,7 @@ const App: React.FC = () => {
 
   const getRoleBadge = (role: string) => {
     switch (role) {
+      case 'secret_admin': return '🔒 SYSTEM';
       case 'owner': return '👑 OWNER';
       case 'manager': return '⚡ MANAGER';
       case 'team': return '👤 TEAM';
@@ -189,6 +193,7 @@ const App: React.FC = () => {
           {getRoleBadge(userRole)} ACCESS LEVEL
         </h3>
         <p style={{ margin: '0', fontSize: '14px', opacity: 0.9 }}>
+          {userRole === 'secret_admin' && 'Complete system control and backend access'}
           {userRole === 'owner' && 'Full access to all revenue, traffic, and operational data'}
           {userRole === 'manager' && 'Access to operational and traffic data (revenue restricted)'}
           {userRole === 'team' && 'Access to operational data only (revenue & traffic restricted)'}
@@ -276,7 +281,63 @@ const App: React.FC = () => {
         gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
         gap: '20px' 
       }}>
-        {/* Revenue Intelligence - Owner Only */}
+        {/* Add Secret Admin Panel - Only visible to secret_admin */}
+        {userRole === 'secret_admin' && (
+          <div style={{
+            background: 'linear-gradient(135deg, #1f2937, #111827)',
+            borderRadius: '15px',
+            padding: '25px',
+            color: 'white',
+            border: '2px solid #374151'
+          }}>
+            <h3 style={{ 
+              fontSize: '18px', 
+              fontWeight: '600', 
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <Settings size={20} style={{ color: '#f59e0b' }} />
+              System Control Panel
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '10px'
+              }}>
+                <span>Database Access</span>
+                <span style={{ fontWeight: '600', color: '#10b981' }}>ACTIVE</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '10px'
+              }}>
+                <span>User Management</span>
+                <span style={{ fontWeight: '600', color: '#10b981' }}>ENABLED</span>
+              </div>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '15px',
+                background: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: '10px'
+              }}>
+                <span>System Logs</span>
+                <span style={{ fontWeight: '600', color: '#f59e0b' }}>MONITORING</span>
+              </div>
+            </div>
+          </div>
+        )}
         {hasAccess('revenue') && (
           <div style={{
             background: 'white',
