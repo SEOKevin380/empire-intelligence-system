@@ -201,7 +201,7 @@ const App: React.FC = () => {
         gap: '20px' 
       }}>
         {/* Revenue Card - Owner Only */}
-        {hasAccess('revenue') ? (
+        {hasAccess('revenue') && (
           <div style={{
             background: 'linear-gradient(135deg, #10b981, #059669)',
             borderRadius: '15px',
@@ -216,23 +216,6 @@ const App: React.FC = () => {
                 </p>
               </div>
               <DollarSign size={32} style={{ opacity: 0.8 }} />
-            </div>
-          </div>
-        ) : (
-          <div style={{
-            background: 'linear-gradient(135deg, #6b7280, #4b5563)',
-            borderRadius: '15px',
-            padding: '25px',
-            color: 'white'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Total Revenue</p>
-                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Lock size={24} /> RESTRICTED
-                </p>
-              </div>
-              <DollarSign size={32} style={{ opacity: 0.5 }} />
             </div>
           </div>
         )}
@@ -270,7 +253,7 @@ const App: React.FC = () => {
         </div>
         
         {/* Traffic Data - Owner & Manager Only */}
-        {hasAccess('traffic') ? (
+        {hasAccess('traffic') && (
           <div style={{
             background: 'linear-gradient(135deg, #f59e0b, #d97706)',
             borderRadius: '15px',
@@ -285,23 +268,6 @@ const App: React.FC = () => {
               <Users size={32} style={{ opacity: 0.8 }} />
             </div>
           </div>
-        ) : (
-          <div style={{
-            background: 'linear-gradient(135deg, #6b7280, #4b5563)',
-            borderRadius: '15px',
-            padding: '25px',
-            color: 'white'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Traffic Data</p>
-                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Lock size={24} /> RESTRICTED
-                </p>
-              </div>
-              <Users size={32} style={{ opacity: 0.5 }} />
-            </div>
-          </div>
         )}
       </div>
 
@@ -311,7 +277,7 @@ const App: React.FC = () => {
         gap: '20px' 
       }}>
         {/* Revenue Intelligence - Owner Only */}
-        {hasAccess('revenue') ? (
+        {hasAccess('revenue') && (
           <div style={{
             background: 'white',
             borderRadius: '15px',
@@ -363,37 +329,6 @@ const App: React.FC = () => {
                 <span>Intelligence Services</span>
                 <span style={{ fontWeight: '600', color: '#6b7280' }}>$0.00</span>
               </div>
-            </div>
-          </div>
-        ) : (
-          <div style={{
-            background: 'white',
-            borderRadius: '15px',
-            padding: '25px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-            textAlign: 'center'
-          }}>
-            <h3 style={{ 
-              fontSize: '18px', 
-              fontWeight: '600', 
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              color: '#6b7280'
-            }}>
-              <Lock size={20} />
-              Revenue Intelligence
-            </h3>
-            <div style={{
-              padding: '40px',
-              background: '#f9fafb',
-              borderRadius: '10px',
-              color: '#6b7280'
-            }}>
-              <Lock size={32} style={{ margin: '0 auto 10px auto', display: 'block' }} />
-              <p style={{ margin: '0', fontWeight: '500' }}>Owner Access Required</p>
             </div>
           </div>
         )}
