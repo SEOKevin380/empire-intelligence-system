@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Brain, Shield, Target, TrendingUp, CheckCircle, AlertTriangle, Zap, Lock, Eye, BarChart3, Settings, Users, Database, Activity, Globe, Search, MousePointer, DollarSign, Gauge, ArrowUp, ArrowDown, Clock, Trophy } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Brain, Shield, TrendingUp, CheckCircle, AlertTriangle, Zap, BarChart3, Search, MousePointer, DollarSign, ArrowUp, ArrowDown } from 'lucide-react';
 
 const EmpireIntelligenceSystem = () => {
   const [currentUser, setCurrentUser] = useState('');
@@ -27,41 +27,41 @@ const EmpireIntelligenceSystem = () => {
     finalContent: ''
   });
 
-  const [correctorMatrix, setCorrectorMatrix] = useState({
+  const [correctorMatrix] = useState({
     active: true,
     totalCorrections: 8742,
     revenueProtected: 337460,
     correctors: {
       contentGeneration: [
-        { name: 'Word Count Expander', active: true, corrections: 1247, maxAttempts: 10, currentAttempts: 0 },
-        { name: 'Keyword Optimizer', active: true, corrections: 856, maxAttempts: 5, currentAttempts: 0 },
-        { name: 'Compliance Enforcer', active: true, corrections: 432, maxAttempts: 3, currentAttempts: 0 },
-        { name: 'SERP Optimizer', active: true, corrections: 1891, maxAttempts: 7, currentAttempts: 0 },
-        { name: 'Link Validator', active: true, corrections: 267, maxAttempts: 3, currentAttempts: 0 },
-        { name: 'Format Corrector', active: true, corrections: 543, maxAttempts: 3, currentAttempts: 0 }
+        { name: 'Word Count Expander', active: true, corrections: 1247, maxAttempts: 10 },
+        { name: 'Keyword Optimizer', active: true, corrections: 856, maxAttempts: 5 },
+        { name: 'Compliance Enforcer', active: true, corrections: 432, maxAttempts: 3 },
+        { name: 'SERP Optimizer', active: true, corrections: 1891, maxAttempts: 7 },
+        { name: 'Link Validator', active: true, corrections: 267, maxAttempts: 3 },
+        { name: 'Format Corrector', active: true, corrections: 543, maxAttempts: 3 }
       ],
       serpMonitoring: [
-        { name: 'Data Freshness Enforcer', active: true, corrections: 892, maxAttempts: 5, currentAttempts: 0 },
-        { name: 'Position Accuracy Validator', active: true, corrections: 456, maxAttempts: 3, currentAttempts: 0 },
-        { name: 'Competitor Tracker', active: true, corrections: 634, maxAttempts: 4, currentAttempts: 0 },
-        { name: 'Alert Validator', active: true, corrections: 278, maxAttempts: 2, currentAttempts: 0 }
+        { name: 'Data Freshness Enforcer', active: true, corrections: 892, maxAttempts: 5 },
+        { name: 'Position Accuracy Validator', active: true, corrections: 456, maxAttempts: 3 },
+        { name: 'Competitor Tracker', active: true, corrections: 634, maxAttempts: 4 },
+        { name: 'Alert Validator', active: true, corrections: 278, maxAttempts: 2 }
       ],
       clickTracking: [
-        { name: 'Attribution Gap Fixer', active: true, corrections: 1156, maxAttempts: 8, currentAttempts: 0 },
-        { name: 'Conversion Matcher', active: true, corrections: 723, maxAttempts: 5, currentAttempts: 0 },
-        { name: 'Real-Time Sync Enforcer', active: true, corrections: 389, maxAttempts: 3, currentAttempts: 0 },
-        { name: 'Data Validator', active: true, corrections: 567, maxAttempts: 4, currentAttempts: 0 }
+        { name: 'Attribution Gap Fixer', active: true, corrections: 1156, maxAttempts: 8 },
+        { name: 'Conversion Matcher', active: true, corrections: 723, maxAttempts: 5 },
+        { name: 'Real-Time Sync Enforcer', active: true, corrections: 389, maxAttempts: 3 },
+        { name: 'Data Validator', active: true, corrections: 567, maxAttempts: 4 }
       ],
       predictiveAnalytics: [
-        { name: 'Model Accuracy Optimizer', active: true, corrections: 834, maxAttempts: 15, currentAttempts: 0 },
-        { name: 'Data Quality Cleaner', active: true, corrections: 445, maxAttempts: 8, currentAttempts: 0 },
-        { name: 'Forecast Validator', active: true, corrections: 312, maxAttempts: 5, currentAttempts: 0 },
-        { name: 'Bias Detector', active: true, corrections: 221, maxAttempts: 10, currentAttempts: 0 }
+        { name: 'Model Accuracy Optimizer', active: true, corrections: 834, maxAttempts: 15 },
+        { name: 'Data Quality Cleaner', active: true, corrections: 445, maxAttempts: 8 },
+        { name: 'Forecast Validator', active: true, corrections: 312, maxAttempts: 5 },
+        { name: 'Bias Detector', active: true, corrections: 221, maxAttempts: 10 }
       ]
     }
   });
 
-  const [serpData, setSerpData] = useState({
+  const [serpData] = useState({
     keywords: [
       { keyword: 'brain supplement', position: 8, volume: 18400, difficulty: 72, trend: 'up', change: 3 },
       { keyword: 'weight loss pill', position: 6, volume: 45600, difficulty: 84, trend: 'up', change: 2 },
@@ -72,24 +72,16 @@ const EmpireIntelligenceSystem = () => {
     accuracy: 98.7
   });
 
-  const [trackingData, setTrackingData] = useState({
+  const [trackingData] = useState({
     totalClicks: 4506,
     conversions: 67,
     revenue: 5893,
     conversionRate: 1.49,
-    attribution: {
-      organic: 63,
-      paid: 27,
-      social: 10
-    },
-    demographics: {
-      age: '35-44 (34%)',
-      gender: 'Male 62%',
-      device: 'Desktop 45%'
-    }
+    attribution: { organic: 63, paid: 27, social: 10 },
+    demographics: { age: '35-44 (34%)', gender: 'Male 62%', device: 'Desktop 45%' }
   });
 
-  const [predictiveData, setPredictiveData] = useState({
+  const [predictiveData] = useState({
     trends: [
       { niche: 'Gut-Brain Axis', growth: 245, confidence: 94 },
       { niche: 'NAD+ Longevity', growth: 189, confidence: 91 },
@@ -102,7 +94,13 @@ const EmpireIntelligenceSystem = () => {
   });
 
   const niches = useMemo(() => [
-    'Anti-Aging', 'Blood Sugar', 'Bone Health', 'Brain Health', 'Cannabis', 'Collagen', 'Dental Health', 'Detox', 'Digestion', 'Hair', 'Hearing', 'Heart', 'HGH', 'Immunity', 'Joint Relief', 'Liver', 'Lungs', 'Muscle', 'Nail Health', 'Nerve Health', 'NMN', 'Pain Relief', 'Sleep', 'Stress', 'Thyroid', 'Urinary', 'Vision', 'Weight Loss', 'Male Health', 'Women\'s Health', 'Pet Health', 'Keto', 'Kratom', 'Methylene Blue', 'Mushrooms', 'Sea Moss', 'Book/Education', 'Electronics', 'FinTech', 'Fitness', 'Lifestyle', 'Pharma', 'Psychics', 'Spiritual', 'Survival'
+    'Anti-Aging', 'Blood Sugar', 'Bone Health', 'Brain Health', 'Cannabis', 'Collagen', 
+    'Dental Health', 'Detox', 'Digestion', 'Hair', 'Hearing', 'Heart', 'HGH', 'Immunity', 
+    'Joint Relief', 'Liver', 'Lungs', 'Muscle', 'Nail Health', 'Nerve Health', 'NMN', 
+    'Pain Relief', 'Sleep', 'Stress', 'Thyroid', 'Urinary', 'Vision', 'Weight Loss', 
+    'Male Health', 'Women\'s Health', 'Pet Health', 'Keto', 'Kratom', 'Methylene Blue', 
+    'Mushrooms', 'Sea Moss', 'Book/Education', 'Electronics', 'FinTech', 'Fitness', 
+    'Lifestyle', 'Pharma', 'Psychics', 'Spiritual', 'Survival'
   ], []);
 
   const complianceFrameworks = useMemo(() => ({
@@ -171,13 +169,8 @@ const EmpireIntelligenceSystem = () => {
     const detectedNiche = detectNiche(contentGeneration.sourceText);
     const framework = getComplianceFramework(detectedNiche || 'Lifestyle');
     
-    setContentGeneration(prev => ({
-      ...prev,
-      detectedNiche,
-      complianceFramework: framework
-    }));
+    setContentGeneration(prev => ({ ...prev, detectedNiche, complianceFramework: framework }));
 
-    // Simulate autonomous correction process
     const gates = ['wordCount', 'keywordDensity', 'compliance', 'seoOptimization', 'linkIntegrity', 'formatValidation'];
     
     for (let attempt = 1; attempt <= 10; attempt++) {
@@ -204,21 +197,11 @@ const EmpireIntelligenceSystem = () => {
             `Attempt ${attempt}: ${gate} - ${isPass ? 'PASS' : 'CORRECTING'} (${Math.round(percentage)}%)`
           ]
         }));
-
-        // Update corrector matrix
-        if (!isPass) {
-          setCorrectorMatrix(prev => ({
-            ...prev,
-            totalCorrections: prev.totalCorrections + 1,
-            revenueProtected: prev.revenueProtected + Math.floor(Math.random() * 1000)
-          }));
-        }
       }
       
-      const allPassed = gates.every(gate => Math.random() > 0.3);
+      const allPassed = gates.every(() => Math.random() > 0.3);
       
       if (allPassed || attempt === 10) {
-        // Mark all as passed
         setContentGeneration(prev => ({
           ...prev,
           qualityGates: Object.keys(prev.qualityGates).reduce((acc, gate) => ({
@@ -227,10 +210,7 @@ const EmpireIntelligenceSystem = () => {
           }), {} as typeof prev.qualityGates),
           isGenerating: false,
           finalContent: `Generated ${contentGeneration.targetWords}+ word content for ${contentGeneration.productName} in ${detectedNiche} niche with ${framework} compliance framework applied.`,
-          generationLog: [
-            ...prev.generationLog,
-            `✅ GENERATION COMPLETE - All quality gates passed with mathematical precision`
-          ]
+          generationLog: [...prev.generationLog, `✅ GENERATION COMPLETE - All quality gates passed with mathematical precision`]
         }));
         break;
       }
@@ -280,10 +260,7 @@ const EmpireIntelligenceSystem = () => {
             <span>{userInfo.badge}</span>
             <span style={{ fontWeight: '500' }}>{userInfo.level}</span>
           </div>
-          <button 
-            onClick={() => setIsLoggedIn(false)}
-            style={{ padding: '0.5rem 1rem', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-          >
+          <button onClick={() => setIsLoggedIn(false)} style={{ padding: '0.5rem 1rem', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
             Logout
           </button>
         </div>
@@ -392,7 +369,6 @@ const LoginForm: React.FC<{ onLogin: (email: string, password: string) => boolea
 
 const Dashboard: React.FC<any> = ({ correctorMatrix, serpData, trackingData, predictiveData, userInfo }) => (
   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-    {/* System Status */}
     <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
         <Shield style={{ color: '#10b981' }} size={20} />
@@ -412,7 +388,6 @@ const Dashboard: React.FC<any> = ({ correctorMatrix, serpData, trackingData, pre
       </div>
     </div>
 
-    {/* Content Generation Stats */}
     <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
         <Brain style={{ color: '#667eea' }} size={20} />
@@ -432,7 +407,6 @@ const Dashboard: React.FC<any> = ({ correctorMatrix, serpData, trackingData, pre
       </div>
     </div>
 
-    {/* SERP Performance */}
     <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
         <Search style={{ color: '#f59e0b' }} size={20} />
@@ -452,7 +426,6 @@ const Dashboard: React.FC<any> = ({ correctorMatrix, serpData, trackingData, pre
       </div>
     </div>
 
-    {/* Revenue Tracking */}
     {userInfo.canSeeRevenue && (
       <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -481,7 +454,6 @@ const ContentGeneration: React.FC<any> = ({ contentGeneration, setContentGenerat
     <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#1a202c' }}>Semantic Content Engine</h2>
       
-      {/* Step 1: Source Analysis */}
       <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#f7fafc', borderRadius: '8px' }}>
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#1a202c' }}>Step 1: Source Material Analysis</h3>
         <textarea
@@ -502,7 +474,6 @@ const ContentGeneration: React.FC<any> = ({ contentGeneration, setContentGenerat
         )}
       </div>
 
-      {/* Step 2: Product Configuration */}
       <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#f7fafc', borderRadius: '8px' }}>
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#1a202c' }}>Step 2: Product Configuration</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
@@ -548,7 +519,6 @@ const ContentGeneration: React.FC<any> = ({ contentGeneration, setContentGenerat
         </div>
       </div>
 
-      {/* Generation Button */}
       <div style={{ marginBottom: '2rem' }}>
         <button
           onClick={simulateContentGeneration}
@@ -581,7 +551,6 @@ const ContentGeneration: React.FC<any> = ({ contentGeneration, setContentGenerat
         </button>
       </div>
 
-      {/* Quality Gates Display */}
       {(contentGeneration.isGenerating || Object.values(contentGeneration.qualityGates).some((gate: any) => gate.status !== 'pending')) && (
         <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#f7fafc', borderRadius: '8px' }}>
           <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#1a202c' }}>
@@ -604,7 +573,6 @@ const ContentGeneration: React.FC<any> = ({ contentGeneration, setContentGenerat
         </div>
       )}
 
-      {/* Generation Log */}
       {contentGeneration.generationLog.length > 0 && (
         <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#1a202c', borderRadius: '8px', color: '#e2e8f0' }}>
           <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600' }}>Autonomous Correction Log</h3>
@@ -618,7 +586,6 @@ const ContentGeneration: React.FC<any> = ({ contentGeneration, setContentGenerat
         </div>
       )}
 
-      {/* Final Output */}
       {contentGeneration.finalContent && (
         <div style={{ padding: '1.5rem', background: '#e6fffa', borderRadius: '8px', border: '1px solid #14b8a6' }}>
           <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#065f46' }}>✅ Content Generation Complete</h3>
@@ -656,7 +623,6 @@ const CorrectorMatrix: React.FC<any> = ({ correctorMatrix }) => (
       </div>
     </div>
 
-    {/* Corrector Categories */}
     {Object.entries(correctorMatrix.correctors).map(([category, correctors]: [string, any]) => (
       <div key={category} style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '1.5rem' }}>
         <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#1a202c', textTransform: 'capitalize' }}>
@@ -811,4 +777,46 @@ const PredictiveAnalytics: React.FC<any> = ({ predictiveData, userInfo }) => (
     <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#1a202c' }}>Predictive Market Intelligence</h2>
       
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        {userInfo.canSeeRevenue && (
+          <div style={{ padding: '1.5rem', background: '#e6fffa', borderRadius: '8px', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#065f46' }}>${(predictiveData.revenue12Month / 1000000).toFixed(1)}M</div>
+            <div style={{ color: '#0f766e' }}>12-Month Projection</div>
+          </div>
+        )}
+        <div style={{ padding: '1.5rem', background: '#fef3c7', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#92400e' }}>{predictiveData.riskScore}</div>
+          <div style={{ color: '#b45309' }}>Risk Score</div>
+        </div>
+        <div style={{ padding: '1.5rem', background: '#f0f9ff', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#0c4a6e' }}>{predictiveData.opportunities}</div>
+          <div style={{ color: '#0369a1' }}>Opportunities</div>
+        </div>
+        <div style={{ padding: '1.5rem', background: '#f3e8ff', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#581c87' }}>85%+</div>
+          <div style={{ color: '#7c3aed' }}>Forecast Accuracy</div>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: '2rem' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600' }}>Emerging Market Trends</h3>
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {predictiveData.trends.map((trend: any, index: number) => (
+            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <div>
+                <div style={{ fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{trend.niche}</div>
+                <div style={{ fontSize: '0.9rem', color: '#718096' }}>Confidence: {trend.confidence}%</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <TrendingUp style={{ color: '#10b981' }} size={20} />
+                <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>+{trend.growth}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+export default EmpireIntelligenceSystem;
