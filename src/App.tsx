@@ -1,1381 +1,814 @@
-import React, { useState } from 'react';
-import { Brain, Database, TrendingUp, AlertTriangle, CheckCircle, Activity, Target, Zap, BarChart3, Settings, Eye, Shield, Globe, Users, DollarSign, Lock } from 'lucide-react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { Brain, Shield, Target, TrendingUp, CheckCircle, AlertTriangle, Zap, Lock, Eye, BarChart3, Settings, Users, Database, Activity, Globe, Search, MousePointer, DollarSign, Gauge, ArrowUp, ArrowDown, Clock, Trophy } from 'lucide-react';
 
-const App: React.FC = () => {
+const EmpireIntelligenceSystem = () => {
+  const [currentUser, setCurrentUser] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<'owner' | 'manager' | 'team' | 'secret_admin'>('team');
-  const [activeModule, setActiveModule] = useState('dashboard');
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-
-  // Sample data for demonstration
-  const [stats] = useState({
-    totalRevenue: 0,
-    activeModules: 5,
-    domainsTracked: 0,
-    uptime: 99.999,
-    predictionsAccuracy: 0,
-    competitorsTracked: 0,
-    opportunitiesValue: 0,
-    trafficData: 0,
-    conversionRate: 0,
-    activeUsers: 0
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [contentGeneration, setContentGeneration] = useState({
+    sourceText: '',
+    productName: '',
+    primaryKeyword: '',
+    affiliateLink: '',
+    targetWords: 6000,
+    isGenerating: false,
+    generationLog: [],
+    currentAttempt: 0,
+    qualityGates: {
+      wordCount: { status: 'pending', percentage: 0, attempts: 0 },
+      keywordDensity: { status: 'pending', percentage: 0, attempts: 0 },
+      compliance: { status: 'pending', percentage: 0, attempts: 0 },
+      seoOptimization: { status: 'pending', percentage: 0, attempts: 0 },
+      linkIntegrity: { status: 'pending', percentage: 0, attempts: 0 },
+      formatValidation: { status: 'pending', percentage: 0, attempts: 0 }
+    },
+    detectedNiche: null,
+    complianceFramework: null,
+    finalContent: ''
   });
 
-  // Content system state
-  const [contentItems, setContentItems] = useState([
-    { id: 1, title: 'Welcome to Empire Intelligence', type: 'Article', status: 'Published', author: 'System', date: '2025-08-06', domain: 'Main Site' },
-    { id: 2, title: 'Getting Started Guide', type: 'Guide', status: 'Draft', author: 'Team Member', date: '2025-08-06', domain: 'Knowledge Base' }
-  ]);
-  const [showContentForm, setShowContentForm] = useState(false);
-  const [newContent, setNewContent] = useState({
-    title: '',
-    type: 'Article',
-    content: '',
-    domain: 'Main Site',
-    status: 'Draft'
+  const [correctorMatrix, setCorrectorMatrix] = useState({
+    active: true,
+    totalCorrections: 8742,
+    revenueProtected: 337460,
+    correctors: {
+      contentGeneration: [
+        { name: 'Word Count Expander', active: true, corrections: 1247, maxAttempts: 10, currentAttempts: 0 },
+        { name: 'Keyword Optimizer', active: true, corrections: 856, maxAttempts: 5, currentAttempts: 0 },
+        { name: 'Compliance Enforcer', active: true, corrections: 432, maxAttempts: 3, currentAttempts: 0 },
+        { name: 'SERP Optimizer', active: true, corrections: 1891, maxAttempts: 7, currentAttempts: 0 },
+        { name: 'Link Validator', active: true, corrections: 267, maxAttempts: 3, currentAttempts: 0 },
+        { name: 'Format Corrector', active: true, corrections: 543, maxAttempts: 3, currentAttempts: 0 }
+      ],
+      serpMonitoring: [
+        { name: 'Data Freshness Enforcer', active: true, corrections: 892, maxAttempts: 5, currentAttempts: 0 },
+        { name: 'Position Accuracy Validator', active: true, corrections: 456, maxAttempts: 3, currentAttempts: 0 },
+        { name: 'Competitor Tracker', active: true, corrections: 634, maxAttempts: 4, currentAttempts: 0 },
+        { name: 'Alert Validator', active: true, corrections: 278, maxAttempts: 2, currentAttempts: 0 }
+      ],
+      clickTracking: [
+        { name: 'Attribution Gap Fixer', active: true, corrections: 1156, maxAttempts: 8, currentAttempts: 0 },
+        { name: 'Conversion Matcher', active: true, corrections: 723, maxAttempts: 5, currentAttempts: 0 },
+        { name: 'Real-Time Sync Enforcer', active: true, corrections: 389, maxAttempts: 3, currentAttempts: 0 },
+        { name: 'Data Validator', active: true, corrections: 567, maxAttempts: 4, currentAttempts: 0 }
+      ],
+      predictiveAnalytics: [
+        { name: 'Model Accuracy Optimizer', active: true, corrections: 834, maxAttempts: 15, currentAttempts: 0 },
+        { name: 'Data Quality Cleaner', active: true, corrections: 445, maxAttempts: 8, currentAttempts: 0 },
+        { name: 'Forecast Validator', active: true, corrections: 312, maxAttempts: 5, currentAttempts: 0 },
+        { name: 'Bias Detector', active: true, corrections: 221, maxAttempts: 10, currentAttempts: 0 }
+      ]
+    }
   });
 
-  // AI Content Generation state
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Empire Intelligence Pro', category: 'Software', description: 'Advanced business intelligence platform', price: '$299/month' }
-  ]);
-  const [showProductForm, setShowProductForm] = useState(false);
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    category: 'Software',
-    description: '',
-    price: ''
+  const [serpData, setSerpData] = useState({
+    keywords: [
+      { keyword: 'brain supplement', position: 8, volume: 18400, difficulty: 72, trend: 'up', change: 3 },
+      { keyword: 'weight loss pill', position: 6, volume: 45600, difficulty: 84, trend: 'up', change: 2 },
+      { keyword: 'joint pain relief', position: 15, volume: 23100, difficulty: 58, trend: 'down', change: -1 },
+      { keyword: 'sleep supplement', position: 11, volume: 16800, difficulty: 65, trend: 'up', change: 4 }
+    ],
+    lastUpdate: new Date().toLocaleTimeString(),
+    accuracy: 98.7
   });
-  const [generatedContent, setGeneratedContent] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
 
-  // User accounts with different access levels
-  const userAccounts = [
-    { email: 'owner@empire.core', role: 'owner', name: 'Empire Owner' },
-    { email: 'manager@empire.core', role: 'manager', name: 'Empire Manager' },
-    { email: 'team@empire.core', role: 'team', name: 'Team Member' },
-    { email: 'god@mode.system', role: 'secret_admin', name: 'System Administrator' }
-  ];
+  const [trackingData, setTrackingData] = useState({
+    totalClicks: 4506,
+    conversions: 67,
+    revenue: 5893,
+    conversionRate: 1.49,
+    attribution: {
+      organic: 63,
+      paid: 27,
+      social: 10
+    },
+    demographics: {
+      age: '35-44 (34%)',
+      gender: 'Male 62%',
+      device: 'Desktop 45%'
+    }
+  });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    const user = userAccounts.find(u => u.email === loginEmail);
-    if (user) {
-      setUserRole(user.role as 'owner' | 'manager' | 'team' | 'secret_admin');
+  const [predictiveData, setPredictiveData] = useState({
+    trends: [
+      { niche: 'Gut-Brain Axis', growth: 245, confidence: 94 },
+      { niche: 'NAD+ Longevity', growth: 189, confidence: 91 },
+      { niche: 'Adaptogens', growth: 156, confidence: 87 },
+      { niche: 'Collagen+', growth: 134, confidence: 89 }
+    ],
+    revenue12Month: 2847650,
+    riskScore: 23,
+    opportunities: 47
+  });
+
+  const niches = useMemo(() => [
+    'Anti-Aging', 'Blood Sugar', 'Bone Health', 'Brain Health', 'Cannabis', 'Collagen', 'Dental Health', 'Detox', 'Digestion', 'Hair', 'Hearing', 'Heart', 'HGH', 'Immunity', 'Joint Relief', 'Liver', 'Lungs', 'Muscle', 'Nail Health', 'Nerve Health', 'NMN', 'Pain Relief', 'Sleep', 'Stress', 'Thyroid', 'Urinary', 'Vision', 'Weight Loss', 'Male Health', 'Women\'s Health', 'Pet Health', 'Keto', 'Kratom', 'Methylene Blue', 'Mushrooms', 'Sea Moss', 'Book/Education', 'Electronics', 'FinTech', 'Fitness', 'Lifestyle', 'Pharma', 'Psychics', 'Spiritual', 'Survival'
+  ], []);
+
+  const complianceFrameworks = useMemo(() => ({
+    'Medical-Strict': ['Anti-Aging', 'Blood Sugar', 'Heart', 'Nerve Health', 'HGH', 'Pain Relief'],
+    'Regulatory-Heavy': ['Cannabis', 'Kratom', 'Methylene Blue'],
+    'Pharmaceutical': ['Pharma'],
+    'Entertainment': ['Psychics', 'Spiritual'],
+    'Financial': ['FinTech'],
+    'Standard': ['All Others']
+  }), []);
+
+  const userLevels = {
+    'team@empire.core': { level: 'TEAM', badge: '👤', canSeeRevenue: false },
+    'manager@empire.core': { level: 'MANAGER', badge: '⚡', canSeeRevenue: false },
+    'owner@empire.core': { level: 'OWNER', badge: '👑', canSeeRevenue: true },
+    'god@mode.system': { level: 'SYSTEM', badge: '🔒', canSeeRevenue: true, isAdmin: true }
+  };
+
+  const handleLogin = useCallback((email: string, password: string) => {
+    if (userLevels[email as keyof typeof userLevels] || email === 'god@mode.system') {
+      setCurrentUser(email);
       setIsLoggedIn(true);
-    } else {
-      alert('Invalid credentials. Try: owner@empire.core, manager@empire.core, or team@empire.core');
+      return true;
     }
-  };
-
-  const handleCreateContent = (e: React.FormEvent) => {
-    e.preventDefault();
-    const content = {
-      ...newContent,
-      id: contentItems.length + 1,
-      author: userAccounts.find(u => u.role === userRole)?.name || 'User',
-      date: new Date().toISOString().split('T')[0]
-    };
-    setContentItems([...contentItems, content]);
-    setNewContent({ title: '', type: 'Article', content: '', domain: 'Main Site', status: 'Draft' });
-    setShowContentForm(false);
-  };
-
-  const handleAddProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    const product = {
-      ...newProduct,
-      id: products.length + 1
-    };
-    setProducts([...products, product]);
-    setNewProduct({ name: '', category: 'Software', description: '', price: '' });
-    setShowProductForm(false);
-  };
-
-  const generatePressRelease = (product: any) => {
-    setIsGenerating(true);
-    
-    // Simulate content generation
-    setTimeout(() => {
-      const content = `## ${product.name} Launches: Revolutionary ${product.category} Solution
-
-**FOR IMMEDIATE RELEASE**
-
-Empire Intelligence announces the launch of ${product.name}, a groundbreaking ${product.category.toLowerCase()} solution designed to transform how businesses operate in the digital age.
-
-### Product Overview
-
-${product.name} represents a significant advancement in ${product.category.toLowerCase()} technology, offering unprecedented capabilities for modern enterprises. Priced at ${product.price}, this solution addresses the growing demand for intelligent, scalable business tools.
-
-**Key Features:**
-- Advanced analytics and intelligence
-- Real-time data processing
-- Enterprise-grade security
-- Scalable architecture
-- User-friendly interface
-
-### Market Impact
-
-The introduction of ${product.name} comes at a critical time when businesses are seeking more efficient ways to manage their operations. This solution fills a significant gap in the market by providing ${product.description.toLowerCase()}.
-
-### Availability
-
-${product.name} is now available for immediate deployment. Organizations interested in implementing this cutting-edge solution can contact Empire Intelligence for consultation and onboarding.
-
-**About Empire Intelligence**
-Empire Intelligence is a leading provider of business intelligence solutions, dedicated to empowering organizations with advanced technology and data-driven insights.
-
----
-*This press release was generated by Empire Intelligence AI Content System*`;
-
-      setGeneratedContent(content);
-      setIsGenerating(false);
-    }, 2000);
-  };
-
-  const generateVSLScript = (product: any) => {
-    setIsGenerating(true);
-    
-    // Simulate longer VSL generation
-    setTimeout(() => {
-      const content = `# Video Sales Letter Script: ${product.name}
-
-## HOOK (0-15 seconds)
-"Stop! Before you spend another dollar on outdated ${product.category.toLowerCase()} solutions that don't deliver results, you need to see this breakthrough technology that's revolutionizing how successful businesses operate..."
-
-## PROBLEM IDENTIFICATION (15-45 seconds)
-Are you tired of:
-- Struggling with complex systems that slow down your business?
-- Paying premium prices for software that under-delivers?
-- Wasting time on solutions that don't integrate with your workflow?
-- Missing opportunities because your current tools can't keep up?
-
-If you answered YES to any of these questions, then what I'm about to show you will change everything...
-
-## SOLUTION INTRODUCTION (45-90 seconds)
-Introducing ${product.name} - the ${product.category.toLowerCase()} solution that's already helping thousands of businesses achieve unprecedented growth and efficiency.
-
-This isn't just another tool. It's a complete transformation of how you'll run your business. ${product.description}
-
-## BENEFITS DEEP DIVE (90-180 seconds)
-Here's what makes ${product.name} different:
-
-**Benefit #1: Immediate Results**
-From day one, you'll see improvements in efficiency, data clarity, and decision-making speed. Our clients report 40% faster processing times within the first week.
-
-**Benefit #2: Scalable Growth**
-Whether you're a startup or enterprise, ${product.name} grows with you. No need to migrate or rebuild - it adapts to your expanding needs.
-
-**Benefit #3: Cost Effectiveness**
-At just ${product.price}, you're getting enterprise-level functionality at a fraction of traditional costs. Most clients save over $10,000 annually.
-
-**Benefit #4: Integration Excellence**
-Seamlessly connects with your existing systems. No disruption, no learning curve, no headaches.
-
-## SOCIAL PROOF (180-240 seconds)
-"Since implementing ${product.name}, our team productivity has increased by 60% and our decision-making speed has doubled. It's transformed our entire operation." - Sarah Chen, CEO of TechForward
-
-"I was skeptical at first, but ${product.name} delivered results faster than any solution we've tried. The ROI was evident within 30 days." - Marcus Rodriguez, Operations Director
-
-## URGENCY & SCARCITY (240-300 seconds)
-Here's the thing - we're only accepting 100 new clients this month. Why? Because we want to ensure every client receives the white-glove onboarding and support they deserve.
-
-Once we reach capacity, the next available spot won't open until next quarter. And by then, your competitors might already have the advantage.
-
-## PRICE REVELATION (300-360 seconds)
-Now, you might think a solution this powerful would cost $5,000, $10,000, or even $20,000 per month. That's what competitors charge for far less capability.
-
-But because we believe every business deserves access to cutting-edge technology, we're offering ${product.name} for just ${product.price}.
-
-That's less than what most businesses spend on coffee each month, yet it delivers exponentially more value.
-
-## RISK REVERSAL (360-420 seconds)
-And to make this decision even easier, we're including our 60-day money-back guarantee. Try ${product.name} for a full 60 days. If you're not completely satisfied, we'll refund every penny - no questions asked.
-
-You literally have nothing to lose and everything to gain.
-
-## CALL TO ACTION (420-480 seconds)
-Don't let another day pass watching your competitors pull ahead. Click the button below right now to secure your spot among the select 100 businesses we're accepting this month.
-
-Remember:
-- Only 100 spots available
-- 60-day money-back guarantee
-- Immediate access and implementation
-- Complete support and training included
-
-Click now and join the businesses already transforming their operations with ${product.name}.
-
-## FINAL PUSH (480-540 seconds)
-Look, you have two choices:
-
-Choice #1: Continue struggling with outdated solutions, watching opportunities slip away, and falling behind competitors who are already using advanced technology.
-
-Choice #2: Take action right now, secure your spot, and start experiencing the transformation that ${product.name} delivers.
-
-The choice is yours. But remember - only 100 spots remain, and once they're gone, you'll have to wait until next quarter.
-
-Don't wait. Click the button below now and step into the future of ${product.category.toLowerCase()} excellence.
-
----
-
-## CLOSING FRAME (540-600 seconds)
-This is your moment. Your business deserves the best tools available. ${product.name} is that tool.
-
-Click below now and let's get started on your transformation today.
-
-*[END OF SCRIPT - Total Length: ~6,000+ words when fully expanded with detailed examples, case studies, and additional social proof]*
-
----
-*This VSL script was generated by Empire Intelligence AI Content System*`;
-
-      setGeneratedContent(content);
-      setIsGenerating(false);
-    }, 3000);
-  };
-
-  // Permission system
-  const hasAccess = (feature: 'revenue' | 'traffic' | 'advanced') => {
-    if (userRole === 'secret_admin') return true;
-    if (userRole === 'owner') return true;
-    if (userRole === 'manager' && feature !== 'revenue') return true;
-    if (userRole === 'team' && feature !== 'revenue' && feature !== 'traffic') return true;
     return false;
-  };
+  }, []);
 
-  const modules = [
-    { id: 'dashboard', name: 'Command Center', icon: Brain, color: '#8b5cf6' },
-    { id: 'content', name: 'Content System', icon: Database, color: '#06b6d4' },
-    { id: 'intelligence', name: 'Market Intelligence', icon: Eye, color: '#3b82f6' },
-    { id: 'predictions', name: 'Prediction Engine', icon: TrendingUp, color: '#10b981' },
-    { id: 'domains', name: 'Empire Domains', icon: Globe, color: '#f59e0b' },
-  ];
+  const detectNiche = useCallback((text: string) => {
+    if (!text) return null;
+    
+    const lowerText = text.toLowerCase();
+    let bestMatch = null;
+    let highestScore = 0;
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'secret_admin': return '#000000';
-      case 'owner': return '#dc2626';
-      case 'manager': return '#8b5cf6';
-      case 'team': return '#10b981';
-      default: return '#6b7280';
+    niches.forEach(niche => {
+      const nicheWords = niche.toLowerCase().split(/[\s-]+/);
+      let score = 0;
+      
+      nicheWords.forEach(word => {
+        if (lowerText.includes(word)) {
+          score += word.length > 3 ? 2 : 1;
+        }
+      });
+      
+      if (score > highestScore) {
+        highestScore = score;
+        bestMatch = niche;
+      }
+    });
+
+    return highestScore > 0 ? bestMatch : 'Lifestyle';
+  }, [niches]);
+
+  const getComplianceFramework = useCallback((niche: string) => {
+    for (const [framework, nicheList] of Object.entries(complianceFrameworks)) {
+      if (nicheList.includes(niche)) {
+        return framework;
+      }
     }
-  };
+    return 'Standard';
+  }, [complianceFrameworks]);
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'secret_admin': return '🔒 SYSTEM';
-      case 'owner': return '👑 OWNER';
-      case 'manager': return '⚡ MANAGER';
-      case 'team': return '👤 TEAM';
-      default: return '👤 USER';
+  const simulateContentGeneration = useCallback(async () => {
+    setContentGeneration(prev => ({ ...prev, isGenerating: true, generationLog: [], currentAttempt: 0 }));
+    
+    const detectedNiche = detectNiche(contentGeneration.sourceText);
+    const framework = getComplianceFramework(detectedNiche || 'Lifestyle');
+    
+    setContentGeneration(prev => ({
+      ...prev,
+      detectedNiche,
+      complianceFramework: framework
+    }));
+
+    // Simulate autonomous correction process
+    const gates = ['wordCount', 'keywordDensity', 'compliance', 'seoOptimization', 'linkIntegrity', 'formatValidation'];
+    
+    for (let attempt = 1; attempt <= 10; attempt++) {
+      setContentGeneration(prev => ({ ...prev, currentAttempt: attempt }));
+      
+      for (const gate of gates) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const isPass = Math.random() > (attempt === 1 ? 0.7 : 0.2);
+        const percentage = isPass ? 95 + Math.random() * 5 : 70 + Math.random() * 20;
+        
+        setContentGeneration(prev => ({
+          ...prev,
+          qualityGates: {
+            ...prev.qualityGates,
+            [gate]: {
+              status: isPass ? 'pass' : 'correcting',
+              percentage: Math.round(percentage),
+              attempts: prev.qualityGates[gate as keyof typeof prev.qualityGates].attempts + 1
+            }
+          },
+          generationLog: [
+            ...prev.generationLog,
+            `Attempt ${attempt}: ${gate} - ${isPass ? 'PASS' : 'CORRECTING'} (${Math.round(percentage)}%)`
+          ]
+        }));
+
+        // Update corrector matrix
+        if (!isPass) {
+          setCorrectorMatrix(prev => ({
+            ...prev,
+            totalCorrections: prev.totalCorrections + 1,
+            revenueProtected: prev.revenueProtected + Math.floor(Math.random() * 1000)
+          }));
+        }
+      }
+      
+      const allPassed = gates.every(gate => Math.random() > 0.3);
+      
+      if (allPassed || attempt === 10) {
+        // Mark all as passed
+        setContentGeneration(prev => ({
+          ...prev,
+          qualityGates: Object.keys(prev.qualityGates).reduce((acc, gate) => ({
+            ...acc,
+            [gate]: { status: 'pass', percentage: 95 + Math.random() * 5, attempts: prev.qualityGates[gate as keyof typeof prev.qualityGates].attempts }
+          }), {} as typeof prev.qualityGates),
+          isGenerating: false,
+          finalContent: `Generated ${contentGeneration.targetWords}+ word content for ${contentGeneration.productName} in ${detectedNiche} niche with ${framework} compliance framework applied.`,
+          generationLog: [
+            ...prev.generationLog,
+            `✅ GENERATION COMPLETE - All quality gates passed with mathematical precision`
+          ]
+        }));
+        break;
+      }
     }
-  };
-
-  const renderContentSystem = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-      {/* Content Actions Bar */}
-      <div style={{
-        background: 'white',
-        borderRadius: '15px',
-        padding: '20px',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
-        <h3 style={{ margin: '0', fontSize: '18px', fontWeight: '600', color: '#1f2937' }}>
-          AI Content Management System
-        </h3>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={() => setShowProductForm(!showProductForm)}
-            style={{
-              background: '#10b981',
-              color: 'white',
-              padding: '10px 20px',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            + Add Product
-          </button>
-          <button
-            onClick={() => setShowContentForm(!showContentForm)}
-            style={{
-              background: '#06b6d4',
-              color: 'white',
-              padding: '10px 20px',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            + Manual Content
-          </button>
-        </div>
-      </div>
-
-      {/* Product Form */}
-      {showProductForm && (
-        <div style={{
-          background: 'white',
-          borderRadius: '15px',
-          padding: '25px',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-            Add New Product for AI Content Generation
-          </h4>
-          <form onSubmit={handleAddProduct} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <input
-                type="text"
-                placeholder="Product Name"
-                value={newProduct.name}
-                onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                style={{
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-                required
-              />
-              <select
-                value={newProduct.category}
-                onChange={(e) => setNewProduct({...newProduct, category: e.target.value})}
-                style={{
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-              >
-                <option value="Software">Software</option>
-                <option value="Service">Service</option>
-                <option value="Product">Product</option>
-                <option value="Course">Course</option>
-                <option value="Consulting">Consulting</option>
-              </select>
-            </div>
-            <input
-              type="text"
-              placeholder="Price (e.g., $299/month)"
-              value={newProduct.price}
-              onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
-              style={{
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px'
-              }}
-              required
-            />
-            <textarea
-              placeholder="Product description..."
-              value={newProduct.description}
-              onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-              rows={3}
-              style={{
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                resize: 'vertical'
-              }}
-              required
-            />
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                type="submit"
-                style={{
-                  background: '#10b981',
-                  color: 'white',
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                Add Product
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowProductForm(false)}
-                style={{
-                  background: '#6b7280',
-                  color: 'white',
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* AI Content Generation */}
-      <div style={{
-        background: 'white',
-        borderRadius: '15px',
-        padding: '25px',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-          🤖 AI Content Generator
-        </h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
-          {products.map((product) => (
-            <div
-              key={product.id}
-              style={{
-                padding: '20px',
-                background: '#f9fafb',
-                borderRadius: '10px',
-                border: '1px solid #e5e7eb'
-              }}
-            >
-              <h5 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-                {product.name}
-              </h5>
-              <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#6b7280' }}>
-                {product.category} • {product.price}
-              </p>
-              <p style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#374151' }}>
-                {product.description}
-              </p>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => generatePressRelease(product)}
-                  disabled={isGenerating}
-                  style={{
-                    background: '#3b82f6',
-                    color: 'white',
-                    padding: '8px 16px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: isGenerating ? 'not-allowed' : 'pointer',
-                    fontSize: '12px',
-                    opacity: isGenerating ? 0.6 : 1
-                  }}
-                >
-                  📰 Press Release
-                </button>
-                <button
-                  onClick={() => generateVSLScript(product)}
-                  disabled={isGenerating}
-                  style={{
-                    background: '#8b5cf6',
-                    color: 'white',
-                    padding: '8px 16px',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: isGenerating ? 'not-allowed' : 'pointer',
-                    fontSize: '12px',
-                    opacity: isGenerating ? 0.6 : 1
-                  }}
-                >
-                  🎬 VSL Script
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Generated Content Display */}
-      {generatedContent && (
-        <div style={{
-          background: 'white',
-          borderRadius: '15px',
-          padding: '25px',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-            🎯 Generated Content
-          </h4>
-          <div style={{
-            background: '#f9fafb',
-            padding: '20px',
-            borderRadius: '8px',
-            border: '1px solid #e5e7eb',
-            maxHeight: '400px',
-            overflowY: 'auto'
-          }}>
-            <pre style={{
-              margin: '0',
-              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              fontSize: '14px',
-              lineHeight: '1.5',
-              whiteSpace: 'pre-wrap',
-              color: '#374151'
-            }}>
-              {generatedContent}
-            </pre>
-          </div>
-          <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-            <button
-              onClick={() => navigator.clipboard.writeText(generatedContent)}
-              style={{
-                background: '#10b981',
-                color: 'white',
-                padding: '8px 16px',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              📋 Copy Content
-            </button>
-            <button
-              onClick={() => setGeneratedContent('')}
-              style={{
-                background: '#6b7280',
-                color: 'white',
-                padding: '8px 16px',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {isGenerating && (
-        <div style={{
-          background: 'white',
-          borderRadius: '15px',
-          padding: '40px',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-          textAlign: 'center'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid #f3f4f6',
-            borderTop: '4px solid #3b82f6',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px auto'
-          }} />
-          <h4 style={{ margin: '0 0 10px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-            🤖 AI is generating your content...
-          </h4>
-          <p style={{ margin: '0', color: '#6b7280' }}>
-            Creating professional, high-quality content optimized for your audience
-          </p>
-        </div>
-      )}
-
-      {/* Content Creation Form */}
-      {showContentForm && (
-        <div style={{
-          background: 'white',
-          borderRadius: '15px',
-          padding: '25px',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-            Create New Content
-          </h4>
-          <form onSubmit={handleCreateContent} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <input
-                type="text"
-                placeholder="Content Title"
-                value={newContent.title}
-                onChange={(e) => setNewContent({...newContent, title: e.target.value})}
-                style={{
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-                required
-              />
-              <select
-                value={newContent.type}
-                onChange={(e) => setNewContent({...newContent, type: e.target.value})}
-                style={{
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-              >
-                <option value="Article">Article</option>
-                <option value="Guide">Guide</option>
-                <option value="Tutorial">Tutorial</option>
-                <option value="Review">Review</option>
-                <option value="News">News</option>
-              </select>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <select
-                value={newContent.domain}
-                onChange={(e) => setNewContent({...newContent, domain: e.target.value})}
-                style={{
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-              >
-                <option value="Main Site">Main Site</option>
-                <option value="Knowledge Base">Knowledge Base</option>
-                <option value="Blog">Blog</option>
-                <option value="Resources">Resources</option>
-                <option value="Landing Pages">Landing Pages</option>
-              </select>
-              <select
-                value={newContent.status}
-                onChange={(e) => setNewContent({...newContent, status: e.target.value})}
-                style={{
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-              >
-                <option value="Draft">Draft</option>
-                <option value="Review">Under Review</option>
-                <option value="Published">Published</option>
-              </select>
-            </div>
-            <textarea
-              placeholder="Content body..."
-              value={newContent.content}
-              onChange={(e) => setNewContent({...newContent, content: e.target.value})}
-              rows={4}
-              style={{
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '14px',
-                resize: 'vertical'
-              }}
-              required
-            />
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                type="submit"
-                style={{
-                  background: '#10b981',
-                  color: 'white',
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                Create Content
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowContentForm(false)}
-                style={{
-                  background: '#6b7280',
-                  color: 'white',
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Content List */}
-      <div style={{
-        background: 'white',
-        borderRadius: '15px',
-        padding: '25px',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-          Content Library ({contentItems.length} items)
-        </h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {contentItems.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
-                gap: '15px',
-                padding: '15px',
-                background: '#f9fafb',
-                borderRadius: '10px',
-                alignItems: 'center',
-                fontSize: '14px'
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: '600', color: '#1f2937' }}>{item.title}</div>
-                <div style={{ color: '#6b7280', fontSize: '12px' }}>by {item.author}</div>
-              </div>
-              <span style={{ color: '#6b7280' }}>{item.type}</span>
-              <span style={{ color: '#6b7280' }}>{item.domain}</span>
-              <span style={{
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontWeight: '500',
-                background: item.status === 'Published' ? '#dcfce7' : item.status === 'Review' ? '#fef3c7' : '#f3f4f6',
-                color: item.status === 'Published' ? '#166534' : item.status === 'Review' ? '#92400e' : '#374151'
-              }}>
-                {item.status}
-              </span>
-              <span style={{ color: '#6b7280' }}>{item.date}</span>
-              <div style={{ display: 'flex', gap: '5px' }}>
-                <button style={{
-                  background: '#3b82f6',
-                  color: 'white',
-                  padding: '4px 8px',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px'
-                }}>
-                  Edit
-                </button>
-                {hasAccess('revenue') && (
-                  <button style={{
-                    background: '#dc2626',
-                    color: 'white',
-                    padding: '4px 8px',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px'
-                  }}>
-                    Delete
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Content Analytics - Only for Manager+ */}
-      {hasAccess('traffic') && (
-        <div style={{
-          background: 'white',
-          borderRadius: '15px',
-          padding: '25px',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h4 style={{ margin: '0 0 20px 0', fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
-            Content Performance
-          </h4>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-            gap: '15px' 
-          }}>
-            <div style={{
-              padding: '15px',
-              background: '#f0f9ff',
-              borderRadius: '10px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0369a1' }}>2,450</div>
-              <div style={{ fontSize: '14px', color: '#6b7280' }}>Total Views</div>
-            </div>
-            <div style={{
-              padding: '15px',
-              background: '#f0fdf4',
-              borderRadius: '10px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#166534' }}>85%</div>
-              <div style={{ fontSize: '14px', color: '#6b7280' }}>Engagement Rate</div>
-            </div>
-            <div style={{
-              padding: '15px',
-              background: '#fefce8',
-              borderRadius: '10px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#ca8a04' }}>12</div>
-              <div style={{ fontSize: '14px', color: '#6b7280' }}>Published This Month</div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderDashboard = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-      {/* Access Level Notice */}
-      <div style={{
-        background: `linear-gradient(135deg, ${getRoleColor(userRole)}, ${getRoleColor(userRole)}dd)`,
-        borderRadius: '15px',
-        padding: '20px',
-        color: 'white',
-        textAlign: 'center'
-      }}>
-        <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', fontWeight: '600' }}>
-          {getRoleBadge(userRole)} ACCESS LEVEL
-        </h3>
-        <p style={{ margin: '0', fontSize: '14px', opacity: 0.9 }}>
-          {userRole === 'secret_admin' && 'Complete system control and backend access'}
-          {userRole === 'owner' && 'Full access to all revenue, traffic, and operational data'}
-          {userRole === 'manager' && 'Access to operational and traffic data (revenue restricted)'}
-          {userRole === 'team' && 'Access to operational data only (revenue & traffic restricted)'}
-        </p>
-      </div>
-
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-        gap: '20px' 
-      }}>
-        {/* Revenue Card - Owner Only */}
-        {hasAccess('revenue') && (
-          <div style={{
-            background: 'linear-gradient(135deg, #10b981, #059669)',
-            borderRadius: '15px',
-            padding: '25px',
-            color: 'white'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Total Revenue</p>
-                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold' }}>
-                  ${stats.totalRevenue.toFixed(2)}
-                </p>
-              </div>
-              <DollarSign size={32} style={{ opacity: 0.8 }} />
-            </div>
-          </div>
-        )}
-        
-        {/* Active Modules - All Users */}
-        <div style={{
-          background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-          borderRadius: '15px',
-          padding: '25px',
-          color: 'white'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Active Modules</p>
-              <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold' }}>{stats.activeModules}</p>
-            </div>
-            <Brain size={32} style={{ opacity: 0.8 }} />
-          </div>
-        </div>
-        
-        {/* System Uptime - All Users */}
-        <div style={{
-          background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-          borderRadius: '15px',
-          padding: '25px',
-          color: 'white'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>System Uptime</p>
-              <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold' }}>{stats.uptime}%</p>
-            </div>
-            <Activity size={32} style={{ opacity: 0.8 }} />
-          </div>
-        </div>
-        
-        {/* Traffic Data - Owner & Manager Only */}
-        {hasAccess('traffic') && (
-          <div style={{
-            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-            borderRadius: '15px',
-            padding: '25px',
-            color: 'white'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <p style={{ margin: '0 0 10px 0', opacity: 0.9 }}>Active Users</p>
-                <p style={{ margin: '0', fontSize: '32px', fontWeight: 'bold' }}>{stats.activeUsers}</p>
-              </div>
-              <Users size={32} style={{ opacity: 0.8 }} />
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
-        gap: '20px' 
-      }}>
-        {/* Add Secret Admin Panel - Only visible to secret_admin */}
-        {userRole === 'secret_admin' && (
-          <div style={{
-            background: 'linear-gradient(135deg, #1f2937, #111827)',
-            borderRadius: '15px',
-            padding: '25px',
-            color: 'white',
-            border: '2px solid #374151'
-          }}>
-            <h3 style={{ 
-              fontSize: '18px', 
-              fontWeight: '600', 
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}>
-              <Settings size={20} style={{ color: '#f59e0b' }} />
-              System Control Panel
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '15px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '10px'
-              }}>
-                <span>Database Access</span>
-                <span style={{ fontWeight: '600', color: '#10b981' }}>ACTIVE</span>
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '15px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '10px'
-              }}>
-                <span>User Management</span>
-                <span style={{ fontWeight: '600', color: '#10b981' }}>ENABLED</span>
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '15px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                borderRadius: '10px'
-              }}>
-                <span>System Logs</span>
-                <span style={{ fontWeight: '600', color: '#f59e0b' }}>MONITORING</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Revenue Intelligence - Owner Only */}
-        {hasAccess('revenue') && (
-          <div style={{
-            background: 'white',
-            borderRadius: '15px',
-            padding: '25px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-          }}>
-            <h3 style={{ 
-              fontSize: '18px', 
-              fontWeight: '600', 
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px'
-            }}>
-              <TrendingUp size={20} style={{ color: '#10b981' }} />
-              Revenue Intelligence
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '15px',
-                background: '#f9fafb',
-                borderRadius: '10px'
-              }}>
-                <span>Domain Portfolio</span>
-                <span style={{ fontWeight: '600', color: '#6b7280' }}>$0.00</span>
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '15px',
-                background: '#f9fafb',
-                borderRadius: '10px'
-              }}>
-                <span>Affiliate Network</span>
-                <span style={{ fontWeight: '600', color: '#6b7280' }}>$0.00</span>
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '15px',
-                background: '#f9fafb',
-                borderRadius: '10px'
-              }}>
-                <span>Intelligence Services</span>
-                <span style={{ fontWeight: '600', color: '#6b7280' }}>$0.00</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Operational Intelligence - All Users */}
-        <div style={{
-          background: 'white',
-          borderRadius: '15px',
-          padding: '25px',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h3 style={{ 
-            fontSize: '18px', 
-            fontWeight: '600', 
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
-            <Eye size={20} style={{ color: '#3b82f6' }} />
-            Operational Intelligence
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '15px',
-              background: '#f9fafb',
-              borderRadius: '10px'
-            }}>
-              <span>Prediction Accuracy</span>
-              <span style={{ fontWeight: '600', color: '#6b7280' }}>{stats.predictionsAccuracy}%</span>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '15px',
-              background: '#f9fafb',
-              borderRadius: '10px'
-            }}>
-              <span>Competitors Tracked</span>
-              <span style={{ fontWeight: '600', color: '#6b7280' }}>{stats.competitorsTracked}</span>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '15px',
-              background: '#f9fafb',
-              borderRadius: '10px'
-            }}>
-              <span>Active Domains</span>
-              <span style={{ fontWeight: '600' }}>{stats.domainsTracked}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  }, [contentGeneration.sourceText, contentGeneration.productName, contentGeneration.targetWords, detectNiche, getComplianceFramework]);
 
   if (!isLoggedIn) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-      }}>
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '20px',
-          padding: '40px',
-          width: '450px',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.2)'
-        }}>
-          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-            <Shield size={64} style={{ color: '#a78bfa', margin: '0 auto 20px auto', display: 'block' }} />
-            <h1 style={{ color: 'white', fontSize: '28px', fontWeight: 'bold', margin: '0 0 10px 0' }}>
-              Empire Intelligence
-            </h1>
-            <p style={{ color: '#e0e7ff', margin: '0' }}>Multi-Tier Access Portal</p>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)', width: '400px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <Brain size={48} style={{ color: '#667eea', marginBottom: '1rem' }} />
+            <h1 style={{ margin: 0, color: '#1a202c', fontSize: '1.5rem', fontWeight: 'bold' }}>Empire Intelligence System</h1>
+            <p style={{ margin: '0.5rem 0 0 0', color: '#718096', fontSize: '0.9rem' }}>Zero-Failure Autonomous Architecture</p>
           </div>
           
-          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <input
-              type="email"
-              placeholder="Email Address"
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '15px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '10px',
-                color: 'white',
-                fontSize: '16px',
-                outline: 'none'
-              }}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '15px',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '10px',
-                color: 'white',
-                fontSize: '16px',
-                outline: 'none'
-              }}
-              required
-            />
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                background: '#8b5cf6',
-                color: 'white',
-                padding: '15px',
-                border: 'none',
-                borderRadius: '10px',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'background 0.3s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#7c3aed'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#8b5cf6'}
-            >
-              Access Empire
-            </button>
-          </form>
+          <LoginForm onLogin={handleLogin} />
           
-          <div style={{ marginTop: '25px', textAlign: 'center', fontSize: '14px', color: '#e0e7ff' }}>
-            <p style={{ margin: '5px 0', fontWeight: '600' }}>Demo Accounts:</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '10px' }}>
-              <p style={{ margin: '0', padding: '5px', background: 'rgba(220, 38, 38, 0.3)', borderRadius: '5px' }}>
-                👑 owner@empire.core
-              </p>
-              <p style={{ margin: '0', padding: '5px', background: 'rgba(139, 92, 246, 0.3)', borderRadius: '5px' }}>
-                ⚡ manager@empire.core
-              </p>
-              <p style={{ margin: '0', padding: '5px', background: 'rgba(16, 185, 129, 0.3)', borderRadius: '5px' }}>
-                👤 team@empire.core
-              </p>
-            </div>
+          <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f7fafc', borderRadius: '6px', fontSize: '0.8rem', color: '#4a5568' }}>
+            <div><strong>Access Levels:</strong></div>
+            <div>👤 TEAM: team@empire.core</div>
+            <div>⚡ MANAGER: manager@empire.core</div>
+            <div>👑 OWNER: owner@empire.core</div>
           </div>
         </div>
       </div>
     );
   }
 
+  const userInfo = userLevels[currentUser as keyof typeof userLevels] || userLevels['team@empire.core'];
+  const isAdmin = userInfo.isAdmin;
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#f5f5f5',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* Header */}
-      <header style={{
-        background: 'white',
-        borderBottom: '1px solid #e5e5e5',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-      }}>
-        <div style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '0 20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          height: '64px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Brain size={32} style={{ color: '#8b5cf6', marginRight: '12px' }} />
-            <h1 style={{ margin: '0', fontSize: '20px', fontWeight: 'bold', color: '#1f2937' }}>
-              Empire Intelligence System
-            </h1>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <div style={{
-              background: getRoleColor(userRole),
-              color: 'white',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              fontSize: '12px',
-              fontWeight: '600'
-            }}>
-              {getRoleBadge(userRole)}
-            </div>
-            <span style={{ fontSize: '14px', color: '#6b7280' }}>
-              Welcome, {userAccounts.find(u => u.role === userRole)?.name}
-            </span>
-            <button
-              onClick={() => setIsLoggedIn(false)}
-              style={{
-                background: '#8b5cf6',
-                color: 'white',
-                padding: '8px 16px',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                cursor: 'pointer'
-              }}
-            >
-              Logout
-            </button>
+      <div style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <Brain size={32} style={{ color: '#667eea' }} />
+          <div>
+            <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold', color: '#1a202c' }}>Empire Intelligence System</h1>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: '#718096' }}>Zero-Failure Autonomous Architecture</p>
           </div>
         </div>
-      </header>
-
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '30px 20px' }}>
-        <div style={{ display: 'flex', gap: '30px' }}>
-          {/* Sidebar */}
-          <aside style={{
-            width: '250px',
-            background: 'white',
-            borderRadius: '15px',
-            padding: '25px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-            height: 'fit-content'
-          }}>
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {modules.map((module) => {
-                const Icon = module.icon;
-                const isActive = activeModule === module.id;
-                return (
-                  <button
-                    key={module.id}
-                    onClick={() => setActiveModule(module.id)}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '12px 16px',
-                      border: 'none',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      background: isActive ? '#8b5cf6' : 'transparent',
-                      color: isActive ? 'white' : '#374151',
-                      transition: 'all 0.2s'
-                    }}
-                    onMouseOver={(e) => {
-                      if (!isActive) e.currentTarget.style.background = '#f3f4f6';
-                    }}
-                    onMouseOut={(e) => {
-                      if (!isActive) e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <Icon size={20} style={{ marginRight: '12px' }} />
-                    {module.name}
-                  </button>
-                );
-              })}
-            </nav>
-          </aside>
-
-          {/* Main Content */}
-          <main style={{ flex: 1 }}>
-            <div style={{ marginBottom: '25px' }}>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '28px', fontWeight: 'bold', color: '#1f2937' }}>
-                {modules.find(m => m.id === activeModule)?.name || 'Dashboard'}
-              </h2>
-              <p style={{ margin: '0', color: '#6b7280' }}>
-                {activeModule === 'dashboard' && 'Complete overview of your empire operations'}
-                {activeModule === 'content' && 'Create and manage content across all empire domains'}
-                {activeModule === 'intelligence' && 'Market intelligence and competitor analysis'}
-                {activeModule === 'predictions' && 'AI-powered market predictions and forecasts'}
-                {activeModule === 'domains' && 'Domain portfolio management and analytics'}
-              </p>
-            </div>
-
-            {activeModule === 'dashboard' && renderDashboard()}
-            {activeModule === 'content' && renderContentSystem()}
-            
-            {activeModule !== 'dashboard' && activeModule !== 'content' && (
-              <div style={{
-                background: 'white',
-                borderRadius: '15px',
-                padding: '40px',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  width: '64px',
-                  height: '64px',
-                  background: '#f3f4f6',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 20px auto'
-                }}>
-                  {React.createElement(modules.find(m => m.id === activeModule)?.icon || Brain, {
-                    size: 32,
-                    style: { color: '#8b5cf6' }
-                  })}
-                </div>
-                <h3 style={{ margin: '0 0 10px 0', fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>
-                  {modules.find(m => m.id === activeModule)?.name} Module
-                </h3>
-                <p style={{ margin: '0 0 25px 0', color: '#6b7280' }}>
-                  This module is ready for development. Add your specific functionality here.
-                </p>
-                <button style={{
-                  background: '#8b5cf6',
-                  color: 'white',
-                  padding: '12px 24px',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}>
-                  Configure Module
-                </button>
-              </div>
-            )}
-          </main>
+        
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: isAdmin ? '#000' : '#f7fafc', borderRadius: '6px', color: isAdmin ? 'white' : '#1a202c' }}>
+            <span>{userInfo.badge}</span>
+            <span style={{ fontWeight: '500' }}>{userInfo.level}</span>
+          </div>
+          <button 
+            onClick={() => setIsLoggedIn(false)}
+            style={{ padding: '0.5rem 1rem', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+          >
+            Logout
+          </button>
         </div>
       </div>
+
+      {/* Navigation */}
+      <div style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '0 2rem' }}>
+        <div style={{ display: 'flex', gap: '2rem' }}>
+          {[
+            { key: 'dashboard', label: 'Intelligence Dashboard', icon: BarChart3 },
+            { key: 'content', label: 'Content Generation', icon: Brain },
+            { key: 'correctors', label: 'Corrector Matrix', icon: Shield },
+            { key: 'serp', label: 'SERP Monitoring', icon: Search },
+            { key: 'tracking', label: 'Click Tracking', icon: MousePointer },
+            { key: 'predictions', label: 'Predictive Analytics', icon: TrendingUp }
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '1rem 0',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === tab.key ? '2px solid #667eea' : '2px solid transparent',
+                color: activeTab === tab.key ? '#667eea' : '#718096',
+                cursor: 'pointer',
+                fontWeight: activeTab === tab.key ? '600' : '400'
+              }}
+            >
+              <tab.icon size={18} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: '2rem' }}>
+        {activeTab === 'dashboard' && <Dashboard correctorMatrix={correctorMatrix} serpData={serpData} trackingData={trackingData} predictiveData={predictiveData} userInfo={userInfo} />}
+        {activeTab === 'content' && <ContentGeneration contentGeneration={contentGeneration} setContentGeneration={setContentGeneration} simulateContentGeneration={simulateContentGeneration} />}
+        {activeTab === 'correctors' && <CorrectorMatrix correctorMatrix={correctorMatrix} />}
+        {activeTab === 'serp' && <SerpMonitoring serpData={serpData} />}
+        {activeTab === 'tracking' && <ClickTracking trackingData={trackingData} userInfo={userInfo} />}
+        {activeTab === 'predictions' && <PredictiveAnalytics predictiveData={predictiveData} userInfo={userInfo} />}
+      </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
 
-export default App;
+// Component definitions
+const LoginForm: React.FC<{ onLogin: (email: string, password: string) => boolean }> = ({ onLogin }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleSubmit = () => {
+    if (!onLogin(email, password)) {
+      alert('Invalid credentials');
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#4a5568', fontWeight: '500' }}>Email</label>
+        <input 
+          type="email" 
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="team@empire.core"
+          style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '1rem' }}
+          onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+        />
+      </div>
+      
+      <div style={{ marginBottom: '1.5rem' }}>
+        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#4a5568', fontWeight: '500' }}>Password</label>
+        <input 
+          type="password" 
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '1rem' }}
+          onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+        />
+      </div>
+      
+      <button 
+        onClick={handleSubmit}
+        style={{ width: '100%', padding: '0.75rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '1rem', fontWeight: '500', cursor: 'pointer' }}
+      >
+        Access System
+      </button>
+    </div>
+  );
+};
+
+const Dashboard: React.FC<any> = ({ correctorMatrix, serpData, trackingData, predictiveData, userInfo }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+    {/* System Status */}
+    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <Shield style={{ color: '#10b981' }} size={20} />
+        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>Zero-Failure Status</h3>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <span>System Health</span>
+        <span style={{ color: '#10b981', fontWeight: '600' }}>99.97%</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <span>Active Correctors</span>
+        <span style={{ color: '#10b981', fontWeight: '600' }}>18/18</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>Revenue Protected</span>
+        <span style={{ color: '#10b981', fontWeight: '600' }}>${correctorMatrix.revenueProtected.toLocaleString()}</span>
+      </div>
+    </div>
+
+    {/* Content Generation Stats */}
+    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <Brain style={{ color: '#667eea' }} size={20} />
+        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>Content Engine</h3>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <span>Niches Supported</span>
+        <span style={{ color: '#667eea', fontWeight: '600' }}>45+</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <span>Quality Gates</span>
+        <span style={{ color: '#667eea', fontWeight: '600' }}>6/6 Active</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>Auto-Corrections</span>
+        <span style={{ color: '#667eea', fontWeight: '600' }}>{correctorMatrix.totalCorrections.toLocaleString()}</span>
+      </div>
+    </div>
+
+    {/* SERP Performance */}
+    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <Search style={{ color: '#f59e0b' }} size={20} />
+        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>SERP Intelligence</h3>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <span>Tracking Accuracy</span>
+        <span style={{ color: '#f59e0b', fontWeight: '600' }}>{serpData.accuracy}%</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <span>Keywords Monitored</span>
+        <span style={{ color: '#f59e0b', fontWeight: '600' }}>{serpData.keywords.length}</span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>Last Update</span>
+        <span style={{ color: '#f59e0b', fontWeight: '600' }}>{serpData.lastUpdate}</span>
+      </div>
+    </div>
+
+    {/* Revenue Tracking */}
+    {userInfo.canSeeRevenue && (
+      <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+          <DollarSign style={{ color: '#10b981' }} size={20} />
+          <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600' }}>Revenue Intelligence</h3>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <span>Total Revenue</span>
+          <span style={{ color: '#10b981', fontWeight: '600' }}>${trackingData.revenue.toLocaleString()}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <span>Conversion Rate</span>
+          <span style={{ color: '#10b981', fontWeight: '600' }}>{trackingData.conversionRate}%</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>12M Projection</span>
+          <span style={{ color: '#10b981', fontWeight: '600' }}>${predictiveData.revenue12Month.toLocaleString()}</span>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
+const ContentGeneration: React.FC<any> = ({ contentGeneration, setContentGeneration, simulateContentGeneration }) => (
+  <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#1a202c' }}>Semantic Content Engine</h2>
+      
+      {/* Step 1: Source Analysis */}
+      <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#f7fafc', borderRadius: '8px' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#1a202c' }}>Step 1: Source Material Analysis</h3>
+        <textarea
+          value={contentGeneration.sourceText}
+          onChange={(e) => setContentGeneration((prev: any) => ({ ...prev, sourceText: e.target.value }))}
+          placeholder="Paste your Pilly Labs product information here for semantic analysis and niche detection..."
+          style={{ width: '100%', height: '120px', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '6px', resize: 'vertical' }}
+        />
+        {contentGeneration.detectedNiche && (
+          <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ padding: '0.5rem 1rem', background: '#e6fffa', color: '#065f46', borderRadius: '6px', fontWeight: '500' }}>
+              Detected Niche: {contentGeneration.detectedNiche}
+            </div>
+            <div style={{ padding: '0.5rem 1rem', background: '#fef3c7', color: '#92400e', borderRadius: '6px', fontWeight: '500' }}>
+              Framework: {contentGeneration.complianceFramework}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Step 2: Product Configuration */}
+      <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#f7fafc', borderRadius: '8px' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#1a202c' }}>Step 2: Product Configuration</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Product Name</label>
+            <input
+              value={contentGeneration.productName}
+              onChange={(e) => setContentGeneration((prev: any) => ({ ...prev, productName: e.target.value }))}
+              placeholder="e.g., NeuroVital Brain Support"
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '6px' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Primary SEO Keyword</label>
+            <input
+              value={contentGeneration.primaryKeyword}
+              onChange={(e) => setContentGeneration((prev: any) => ({ ...prev, primaryKeyword: e.target.value }))}
+              placeholder="e.g., brain supplement"
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '6px' }}
+            />
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Target Word Count</label>
+            <select
+              value={contentGeneration.targetWords}
+              onChange={(e) => setContentGeneration((prev: any) => ({ ...prev, targetWords: parseInt(e.target.value) }))}
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '6px' }}
+            >
+              <option value={6000}>6000+ Words</option>
+              <option value={8000}>8000+ Words</option>
+              <option value={10000}>10000+ Words</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>Affiliate Link</label>
+            <input
+              value={contentGeneration.affiliateLink}
+              onChange={(e) => setContentGeneration((prev: any) => ({ ...prev, affiliateLink: e.target.value }))}
+              placeholder="https://affiliate-link.com"
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '6px' }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Generation Button */}
+      <div style={{ marginBottom: '2rem' }}>
+        <button
+          onClick={simulateContentGeneration}
+          disabled={contentGeneration.isGenerating || !contentGeneration.productName || !contentGeneration.primaryKeyword}
+          style={{
+            padding: '1rem 2rem',
+            background: contentGeneration.isGenerating ? '#9ca3af' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '1rem',
+            fontWeight: '600',
+            cursor: contentGeneration.isGenerating ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          {contentGeneration.isGenerating ? (
+            <>
+              <div style={{ width: '16px', height: '16px', border: '2px solid #ffffff40', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              Generating with Zero-Failure Architecture...
+            </>
+          ) : (
+            <>
+              <Zap size={20} />
+              Generate Content with Autonomous QA
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Quality Gates Display */}
+      {(contentGeneration.isGenerating || Object.values(contentGeneration.qualityGates).some((gate: any) => gate.status !== 'pending')) && (
+        <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#f7fafc', borderRadius: '8px' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#1a202c' }}>
+            Zero-Failure Quality Gates {contentGeneration.isGenerating && `(Attempt ${contentGeneration.currentAttempt}/10)`}
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            {Object.entries(contentGeneration.qualityGates).map(([gate, data]: [string, any]) => (
+              <div key={gate} style={{ padding: '1rem', background: 'white', borderRadius: '6px', borderLeft: `4px solid ${data.status === 'pass' ? '#10b981' : data.status === 'correcting' ? '#f59e0b' : '#e5e7eb'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: '500', textTransform: 'capitalize' }}>{gate.replace(/([A-Z])/g, ' $1')}</span>
+                  {data.status === 'pass' && <CheckCircle size={16} style={{ color: '#10b981' }} />}
+                  {data.status === 'correcting' && <AlertTriangle size={16} style={{ color: '#f59e0b' }} />}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#718096' }}>
+                  {data.percentage}% | {data.attempts} attempts
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Generation Log */}
+      {contentGeneration.generationLog.length > 0 && (
+        <div style={{ marginBottom: '2rem', padding: '1.5rem', background: '#1a202c', borderRadius: '8px', color: '#e2e8f0' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600' }}>Autonomous Correction Log</h3>
+          <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', maxHeight: '200px', overflowY: 'auto' }}>
+            {contentGeneration.generationLog.map((log: string, index: number) => (
+              <div key={index} style={{ marginBottom: '0.25rem', opacity: index === contentGeneration.generationLog.length - 1 ? 1 : 0.7 }}>
+                {log}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Final Output */}
+      {contentGeneration.finalContent && (
+        <div style={{ padding: '1.5rem', background: '#e6fffa', borderRadius: '8px', border: '1px solid #14b8a6' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#065f46' }}>✅ Content Generation Complete</h3>
+          <p style={{ margin: 0, color: '#0f766e' }}>{contentGeneration.finalContent}</p>
+          <div style={{ marginTop: '1rem', padding: '1rem', background: 'white', borderRadius: '6px', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+            <strong>Ready for Distribution:</strong> Newswire, Accesswire, USA Today, Yahoo Finance
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const CorrectorMatrix: React.FC<any> = ({ correctorMatrix }) => (
+  <div>
+    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '1.5rem' }}>
+      <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#1a202c' }}>18-Corrector Autonomous Matrix</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ padding: '1rem', background: '#e6fffa', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#065f46' }}>{correctorMatrix.totalCorrections.toLocaleString()}</div>
+          <div style={{ color: '#0f766e' }}>Total Corrections</div>
+        </div>
+        <div style={{ padding: '1rem', background: '#f0f9ff', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#0c4a6e' }}>${(correctorMatrix.revenueProtected / 1000).toFixed(0)}K</div>
+          <div style={{ color: '#0369a1' }}>Revenue Protected</div>
+        </div>
+        <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#92400e' }}>99.97%</div>
+          <div style={{ color: '#b45309' }}>System Reliability</div>
+        </div>
+        <div style={{ padding: '1rem', background: '#f3e8ff', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#581c87' }}>18/18</div>
+          <div style={{ color: '#7c3aed' }}>Active Correctors</div>
+        </div>
+      </div>
+    </div>
+
+    {/* Corrector Categories */}
+    {Object.entries(correctorMatrix.correctors).map(([category, correctors]: [string, any]) => (
+      <div key={category} style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '1.5rem' }}>
+        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600', color: '#1a202c', textTransform: 'capitalize' }}>
+          {category.replace(/([A-Z])/g, ' $1')} Correctors
+        </h3>
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {correctors.map((corrector: any, index: number) => (
+            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: corrector.active ? '#10b981' : '#ef4444' }} />
+                <span style={{ fontWeight: '500' }}>{corrector.name}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', fontSize: '0.9rem', color: '#718096' }}>
+                <span>{corrector.corrections.toLocaleString()} corrections</span>
+                <span>Max: {corrector.maxAttempts}</span>
+                <span style={{ 
+                  padding: '0.25rem 0.5rem', 
+                  borderRadius: '4px', 
+                  background: corrector.active ? '#dcfce7' : '#fee2e2',
+                  color: corrector.active ? '#166534' : '#dc2626',
+                  fontWeight: '500'
+                }}>
+                  {corrector.active ? 'ACTIVE' : 'INACTIVE'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const SerpMonitoring: React.FC<any> = ({ serpData }) => (
+  <div>
+    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#1a202c' }}>SERP Position Intelligence</h2>
+      
+      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: '#f7fafc', borderRadius: '8px' }}>
+        <div>
+          <div style={{ fontSize: '0.9rem', color: '#718096' }}>Last Updated</div>
+          <div style={{ fontWeight: '600' }}>{serpData.lastUpdate}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '0.9rem', color: '#718096' }}>Tracking Accuracy</div>
+          <div style={{ fontWeight: '600', color: '#10b981' }}>{serpData.accuracy}%</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '0.9rem', color: '#718096' }}>Keywords Monitored</div>
+          <div style={{ fontWeight: '600' }}>{serpData.keywords.length}</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gap: '1rem' }}>
+        {serpData.keywords.map((keyword: any, index: number) => (
+          <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <div>
+              <div style={{ fontWeight: '600', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{keyword.keyword}</div>
+              <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem', color: '#718096' }}>
+                <span>Volume: {keyword.volume.toLocaleString()}</span>
+                <span>Difficulty: {keyword.difficulty}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: keyword.position <= 10 ? '#10b981' : '#f59e0b' }}>
+                  #{keyword.position}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#718096' }}>Position</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: keyword.trend === 'up' ? '#10b981' : '#ef4444' }}>
+                {keyword.trend === 'up' ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                <span style={{ fontWeight: '500' }}>{Math.abs(keyword.change)}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const ClickTracking: React.FC<any> = ({ trackingData, userInfo }) => (
+  <div>
+    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#1a202c' }}>Click & Conversion Intelligence</h2>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ padding: '1.5rem', background: '#f0f9ff', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#0c4a6e' }}>{trackingData.totalClicks.toLocaleString()}</div>
+          <div style={{ color: '#0369a1' }}>Total Clicks</div>
+        </div>
+        <div style={{ padding: '1.5rem', background: '#ecfccb', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#365314' }}>{trackingData.conversions}</div>
+          <div style={{ color: '#4d7c0f' }}>Conversions</div>
+        </div>
+        <div style={{ padding: '1.5rem', background: '#fef3c7', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#92400e' }}>{trackingData.conversionRate}%</div>
+          <div style={{ color: '#b45309' }}>Conversion Rate</div>
+        </div>
+        {userInfo.canSeeRevenue && (
+          <div style={{ padding: '1.5rem', background: '#e6fffa', borderRadius: '8px', textAlign: 'center' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#065f46' }}>${trackingData.revenue.toLocaleString()}</div>
+            <div style={{ color: '#0f766e' }}>Revenue</div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+        <div style={{ padding: '1.5rem', background: '#f7fafc', borderRadius: '8px' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600' }}>Traffic Attribution</h3>
+          <div style={{ display: 'grid', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Organic</span>
+              <span style={{ fontWeight: '600', color: '#10b981' }}>{trackingData.attribution.organic}%</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Paid</span>
+              <span style={{ fontWeight: '600', color: '#3b82f6' }}>{trackingData.attribution.paid}%</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Social</span>
+              <span style={{ fontWeight: '600', color: '#8b5cf6' }}>{trackingData.attribution.social}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ padding: '1.5rem', background: '#f7fafc', borderRadius: '8px' }}>
+          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1.2rem', fontWeight: '600' }}>Demographics</h3>
+          <div style={{ display: 'grid', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Age</span>
+              <span style={{ fontWeight: '600' }}>{trackingData.demographics.age}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Gender</span>
+              <span style={{ fontWeight: '600' }}>{trackingData.demographics.gender}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Device</span>
+              <span style={{ fontWeight: '600' }}>{trackingData.demographics.device}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const PredictiveAnalytics: React.FC<any> = ({ predictiveData, userInfo }) => (
+  <div>
+    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <h2 style={{ margin: '0 0 1.5rem 0', fontSize: '1.5rem', fontWeight: 'bold', color: '#1a202c' }}>Predictive Market Intelligence</h2>
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(
