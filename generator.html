@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Empire Content Generator - Team Interface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #111827;
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #b91c1c, #991b1b);
+        }
+        .btn-secondary {
+            background-color: #374151;
+            color: #d1d5db;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        .btn-tab {
+            background-color: #374151;
+            color: #d1d5db;
+        }
+        .btn-tab.active {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: white;
+        }
+        .card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-label {
+            display: block;
+            color: #d1d5db;
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-input, .form-select {
+            width: 100%;
+            background-color: #374151;
+            color: white;
+            padding: 12px 16px;
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+        }
+        .progress-bar {
+            background-color: #4b5563;
+            border-radius: 9999px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.3s ease;
+        }
+        .progress-complete { background-color: #10b981; }
+        .progress-active { background-color: #3b82f6; }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-red { background-color: #dc2626; color: white; }
+        .badge-green { background-color: #059669; color: white; }
+        .badge-blue { background-color: #2563eb; color: white; }
+        .badge-yellow { background-color: #d97706; color: white; }
+        .badge-gray { background-color: #4b5563; color: white; }
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-between { justify-content: space-between; }
+        .flex-center { align-items: center; }
+        .flex-wrap { flex-wrap: wrap; }
+        .gap-4 { gap: 16px; }
+        .gap-2 { gap: 8px; }
+        .text-center { text-align: center; }
+        .text-white { color: white; }
+        .text-gray { color: #9ca3af; }
+        .text-red { color: #ef4444; }
+        .text-green { color: #10b981; }
+        .text-blue { color: #3b82f6; }
+        .text-orange { color: #f97316; }
+        .text-purple { color: #8b5cf6; }
+        .bg-gradient-green {
+            background: linear-gradient(135deg, #065f46, #047857);
+        }
+        .bg-gradient-blue {
+            background: linear-gradient(135deg, #1e40af, #1e3a8a);
+        }
+        .bg-gradient-purple {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        }
+        .bg-gradient-red {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+        }
+        .header {
+            background-color: #1f2937;
+            border-bottom: 1px solid #374151;
+            padding: 16px 0;
+        }
+        .nav-tabs {
+            background-color: #1f2937;
+            border-bottom: 1px solid #374151;
+            padding: 16px 0;
+        }
+        .main-content {
+            padding: 24px 0;
+            min-height: calc(100vh - 120px);
+        }
+        .metric-card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: left;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="flex flex-between flex-center">
+                <div class="flex flex-center gap-4">
+                    <h1 style="font-size: 24px; font-weight: bold; margin: 0;">👑 Empire Content Generator</h1>
+                    <span class="badge badge-red">ZERO FAILURE</span>
+                </div>
+                <div class="text-center">
+                    <div style="font-size: 14px;" class="text-gray">Team Interface • Zero Templates • Perfect Quality</div>
+                    <div style="font-size: 12px;" class="text-green">⚡ Quality: 99.8% • 🥷 Stealth: 99.2%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+        <div class="container">
+            <div class="flex gap-2">
+                <button onclick="showTab('generator')" id="tab-generator" class="btn btn-tab active">
+                    <span>🚀</span>
+                    <span>Content Generator</span>
+                </button>
+                <button onclick="showTab('queue')" id="tab-queue" class="btn btn-tab">
+                    <span>📋</span>
+                    <span>Content Queue</span>
+                </button>
+                <button onclick="showTab('settings')" id="tab-settings" class="btn btn-tab">
+                    <span>⚙️</span>
+                    <span>Niche Settings</span>
+                </button>
+                <button onclick="showTab('dashboard')" id="tab-dashboard" class="btn btn-tab">
+                    <span>📊</span>
+                    <span>Dashboard</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <!-- Content Generator Tab -->
+            <div id="content-generator">
+                <div class="flex flex-between flex-center" style="margin-bottom: 24px;">
+                    <h2 style="font-size: 28px; font-weight: bold; margin: 0;">🚀 Generate Perfect Content</h2>
+                    <div class="flex gap-2">
+                        <span class="badge badge-green">⚡ ZERO FAILURE MODE</span>
+                        <span class="badge badge-blue">🥷 STEALTH ACTIVE</span>
+                    </div>
+                </div>
+
+                <!-- Quick Content Generation Form -->
+                <div class="card">
+                    <h3 style="font-size: 20px; font-weight: bold; margin-bottom: 24px;">⚡ Quick Content Generation</h3>
+                    <form onsubmit="generateContent(event)">
+                        <div class="grid grid-4" style="margin-bottom: 16px;">
+                            <div class="form-group">
+                                <label class="form-label">Niche</label>
+                                <select id="niche" class="form-select">
+                                    <option value="health">Health & Supplements</option>
+                                    <option value="kitchen">Kitchen & Home</option>
+                                    <option value="tech">Technology & Electronics</option>
+                                    <option value="finance">Finance & Investment</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Content Type</label>
+                                <select id="contentType" class="form-select">
+                                    <option value="press-release">Press Release</option>
+                                    <option value="product-review">Product Review</option>
+                                    <option value="industry-analysis">Industry Analysis</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Publisher</label>
+                                <select id="publisher" class="form-select">
+                                    <option value="accesswire">Accesswire</option>
+                                    <option value="newswire">Newswire</option>
+                                    <option value="globenewswire">GlobeNewswire</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Priority</label>
+                                <select id="priority" class="form-select">
+                                    <option value="normal">Normal</option>
+                                    <option value="high">High Priority</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Content Title/Topic</label>
+                            <input id="title" type="text" placeholder="Enter the main topic, product name, or focus..." class="form-input" required>
+                        </div>
+
+                        <div class="grid grid-2" style="margin-bottom: 24px;">
+                            <div class="form-group">
+                                <label class="form-label">Source URL (Optional)</label>
+                                <input id="sourceUrl" type="url" placeholder="https://product-page.com" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Target Keywords</label>
+                                <input id="keywords" type="text" placeholder="keyword1, keyword2, keyword3" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="flex flex-between flex-center">
+                            <div class="flex gap-4">
+                                <label class="flex flex-center gap-2">
+                                    <input type="checkbox" id="rushMode">
+                                    <span class="text-gray">🔥 Rush Mode (Higher Priority)</span>
+                                </label>
+                                <label class="flex flex-center gap-2">
+                                    <input type="checkbox" id="extraStealth" checked>
+                                    <span class="text-gray">🥷 Extra Stealth Protection</span>
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="font-size: 16px; padding: 16px 32px;">
+                                <span>⚡</span>
+                                <span>GENERATE PERFECT CONTENT</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Content Settings Preview -->
+                <div class="card">
+                    <h3 style="font-size: 20px; font-weight: bold; margin-bottom: 24px;">📋 Current Settings Preview</h3>
+                    <div class="grid grid-3">
+                        <div>
+                            <h4 style="color: #10b981; font-weight: 600; margin-bottom: 12px;">Quality Control</h4>
+                            <div style="font-size: 14px;">
+                                <div class="flex flex-between" style="margin-bottom: 4px;">
+                                    <span class="text-gray">Quality Threshold</span>
+                                    <span class="text-white" id="qualityThreshold" style="font-weight: bold;">99.5%</span>
+                                </div>
+                                <div class="flex flex-between" style="margin-bottom: 4px;">
+                                    <span class="text-gray">Auto-Correction</span>
+                                    <span class="text-red" style="font-weight: bold;">UNTIL PERFECT</span>
+                                </div>
+                                <div class="flex flex-between">
+                                    <span class="text-gray">Failure Tolerance</span>
+                                    <span class="text-red" style="font-weight: bold;">ZERO</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="color: #3b82f6; font-weight: 600; margin-bottom: 12px;">Content Specs</h4>
+                            <div style="font-size: 14px;">
+                                <div class="flex flex-between" style="margin-bottom: 4px;">
+                                    <span class="text-gray">Word Count</span>
+                                    <span class="text-white" id="wordCount" style="font-weight: bold;">6000-8000</span>
+                                </div>
+                                <div class="flex flex-between" style="margin-bottom: 4px;">
+                                    <span class="text-gray">Compliance</span>
+                                    <span class="text-orange" id="compliance" style="font-weight: bold;">YMYL-STRICT</span>
+                                </div>
+                                <div class="flex flex-between">
+                                    <span class="text-gray">SEO Density</span>
+                                    <span class="text-blue" id="seoDensity" style="font-weight: bold;">2.5%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="color: #8b5cf6; font-weight: 600; margin-bottom: 12px;">Stealth Protection</h4>
+                            <div style="font-size: 14px;">
+                                <div class="flex flex-between" style="margin-bottom: 4px;">
+                                    <span class="text-gray">Stealth Level</span>
+                                    <span class="text-green" id="stealthLevel" style="font-weight: bold;">MAXIMUM</span>
+                                </div>
+                                <div class="flex flex-between" style="margin-bottom: 4px;">
+                                    <span class="text-gray">AI Elimination</span>
+                                    <span class="text-green" style="font-weight: bold;">ACTIVE</span>
+                                </div>
+                                <div class="flex flex-between">
+                                    <span class="text-gray">Human Patterns</span>
+                                    <span class="text-green" style="font-weight: bold;">INJECTED</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Queue Tab -->
+            <div id="content-queue" class="hidden">
+                <div class="flex flex-between flex-center" style="margin-bottom: 24px;">
+                    <h2 style="font-size: 28px; font-weight: bold; margin: 0;">📋 Content Generation Queue</h2>
+                    <div class="flex gap-2">
+                        <span class="badge badge-blue">3 ACTIVE</span>
+                        <span class="badge badge-green">2 COMPLETE</span>
+                    </div>
+                </div>
+
+                <!-- Queue Items -->
+                <div id="queueContainer">
+                    <!-- Queue items will be added here -->
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div id="niche-settings" class="hidden">
+                <h2 style="font-size: 28px; font-weight: bold; margin-bottom: 24px;">⚙️ Niche Configuration</h2>
+                
+                <div class="card">
+                    <h3 style="font-size: 20px; font-weight: bold; margin-bottom: 24px;">🎯 Select Niche to Configure</h3>
+                    <div class="grid grid-4">
+                        <div class="bg-gradient-green" style="border-radius: 8px; padding: 16px;">
+                            <h4 style="color: white; font-weight: bold; margin-bottom: 8px;">Health & Supplements</h4>
+                            <div style="font-size: 14px; color: rgba(255,255,255,0.8);">
+                                <div>Threshold: 99.5%</div>
+                                <div>Stealth: 99.1%</div>
+                                <div>Compliance: YMYL-Strict</div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-blue" style="border-radius: 8px; padding: 16px;">
+                            <h4 style="color: white; font-weight: bold; margin-bottom: 8px;">Kitchen & Home</h4>
+                            <div style="font-size: 14px; color: rgba(255,255,255,0.8);">
+                                <div>Threshold: 99.8%</div>
+                                <div>Stealth: 98.8%</div>
+                                <div>Compliance: Standard</div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-purple" style="border-radius: 8px; padding: 16px;">
+                            <h4 style="color: white; font-weight: bold; margin-bottom: 8px;">Technology</h4>
+                            <div style="font-size: 14px; color: rgba(255,255,255,0.8);">
+                                <div>Threshold: 99.3%</div>
+                                <div>Stealth: 98.5%</div>
+                                <div>Compliance: Standard</div>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-red" style="border-radius: 8px; padding: 16px;">
+                            <h4 style="color: white; font-weight: bold; margin-bottom: 8px;">Finance</h4>
+                            <div style="font-size: 14px; color: rgba(255,255,255,0.8);">
+                                <div>Threshold: 99.9%</div>
+                                <div>Stealth: 99.4%</div>
+                                <div>Compliance: YMYL-Financial</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Tab -->
+            <div id="dashboard-view" class="hidden">
+                <div class="card">
+                    <h3 style="font-size: 20px; font-weight: bold; margin-bottom: 16px;">📊 System Dashboard</h3>
+                    <p class="text-gray">View the full system dashboard at: <a href="demo.html" style="color: #3b82f6;">demo.html</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample queue data
+        let contentQueue = [
+            { id: 1, title: 'Alpha Tonic Health Breakthrough', niche: 'Health', publisher: 'Accesswire', status: 'processing', progress: 75, wordCount: 5847, qualityScore: 99.8, corrections: 47, estimatedTime: '2 mins' },
+            { id: 2, title: 'Pacuzzi Kitchen Innovation', niche: 'Kitchen', publisher: 'GlobeNewswire', status: 'complete', progress: 100, wordCount: 4239, qualityScore: 99.9, corrections: 62, estimatedTime: 'Complete' },
+            { id: 3, title: 'TechGear Pro Analysis', niche: 'Tech', publisher: 'Newswire', status: 'queued', progress: 0, wordCount: 0, qualityScore: 0, corrections: 0, estimatedTime: '8 mins' }
+        ];
+
+        // Niche settings
+        const nicheSettings = {
+            health: { wordCount: '6000-8000', compliance: 'YMYL-STRICT', seoDensity: '2.5%', qualityThreshold: '99.5%', stealthLevel: 'MAXIMUM' },
+            kitchen: { wordCount: '5000-7000', compliance: 'STANDARD', seoDensity: '3.2%', qualityThreshold: '99.8%', stealthLevel: 'HIGH' },
+            tech: { wordCount: '4500-6500', compliance: 'STANDARD', seoDensity: '2.8%', qualityThreshold: '99.3%', stealthLevel: 'HIGH' },
+            finance: { wordCount: '6500-8500', compliance: 'YMYL-FINANCIAL', seoDensity: '1.8%', qualityThreshold: '99.9%', stealthLevel: 'MAXIMUM' }
+        };
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('[id$="-generator"], [id$="-queue"], [id$="-settings"], [id$="-view"]').forEach(el => el.classList.add('hidden'));
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.className = 'flex items-center space-x-2 px-4 py-2 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600';
+            });
+
+            // Show selected tab
+            if (tabName === 'generator') {
+                document.getElementById('content-generator').classList.remove('hidden');
+                document.getElementById('tab-generator').className = 'flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 text-white';
+            } else if (tabName === 'queue') {
+                document.getElementById('content-queue').classList.remove('hidden');
+                document.getElementById('tab-queue').className = 'flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 text-white';
+                updateQueue();
+            } else if (tabName === 'settings') {
+                document.getElementById('niche-settings').classList.remove('hidden');
+                document.getElementById('tab-settings').className = 'flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 text-white';
+            } else if (tabName === 'dashboard') {
+                document.getElementById('dashboard-view').classList.remove('hidden');
+                document.getElementById('tab-dashboard').className = 'flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 text-white';
+            }
+        }
+
+        function updatePreview() {
+            const niche = document.getElementById('niche').value;
+            const settings = nicheSettings[niche];
+            
+            document.getElementById('wordCount').textContent = settings.wordCount;
+            document.getElementById('compliance').textContent = settings.compliance;
+            document.getElementById('seoDensity').textContent = settings.seoDensity;
+            document.getElementById('qualityThreshold').textContent = settings.qualityThreshold;
+            document.getElementById('stealthLevel').textContent = settings.stealthLevel;
+        }
+
+        function generateContent(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const niche = document.getElementById('niche').value;
+            const publisher = document.getElementById('publisher').value;
+            const priority = document.getElementById('priority').value;
+
+            if (!title) {
+                alert('Please enter a content title/topic');
+                return;
+            }
+
+            // Add to queue
+            const newItem = {
+                id: contentQueue.length + 1,
+                title: title,
+                niche: niche.charAt(0).toUpperCase() + niche.slice(1),
+                publisher: publisher.charAt(0).toUpperCase() + publisher.slice(1),
+                status: 'processing',
+                progress: 0,
+                wordCount: 0,
+                qualityScore: 0,
+                corrections: 0,
+                estimatedTime: priority === 'urgent' ? '3 mins' : priority === 'high' ? '5 mins' : '8 mins'
+            };
+
+            contentQueue.unshift(newItem);
+
+            // Show success message
+            alert(`✅ Content generation started!\n\n"${title}" has been added to the queue with ${priority} priority.\n\nZero Failure Tolerance is active - content will be corrected until perfect quality is achieved.`);
+
+            // Clear form
+            document.getElementById('title').value = '';
+            document.getElementById('sourceUrl').value = '';
+            document.getElementById('keywords').value = '';
+
+            // Simulate progress
+            simulateProgress(newItem.id);
+        }
+
+        function simulateProgress(itemId) {
+            const item = contentQueue.find(i => i.id === itemId);
+            if (!item) return;
+
+            const interval = setInterval(() => {
+                if (item.progress < 100) {
+                    item.progress += Math.random() * 15;
+                    item.wordCount += Math.floor(Math.random() * 200);
+                    item.corrections += Math.floor(Math.random() * 3);
+                    item.qualityScore = Math.min(99.9, 85 + (item.progress / 100) * 14.9);
+                    
+                    if (item.progress >= 100) {
+                        item.progress = 100;
+                        item.status = 'complete';
+                        item.estimatedTime = 'Complete';
+                        item.qualityScore = 99.8 + Math.random() * 0.2;
+                        clearInterval(interval);
+                    }
+                }
+                updateQueue();
+            }, 2000);
+        }
+
+        function updateQueue() {
+            const container = document.getElementById('queueContainer');
+            container.innerHTML = contentQueue.map(item => `
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex-1">
+                            <h4 class="text-white font-medium">${item.title}</h4>
+                            <div class="flex items-center space-x-4 mt-1 text-sm">
+                                <span class="text-gray-400">${item.niche}</span>
+                                <span class="text-blue-400">${item.publisher}</span>
+                                <span class="text-green-400">Quality: ${item.qualityScore.toFixed(1)}%</span>
+                                <span class="text-orange-400">Corrections: ${item.corrections}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-3 py-1 rounded text-xs ${
+                                item.status === 'complete' ? 'bg-green-600' : 
+                                item.status === 'processing' ? 'bg-blue-600' : 'bg-gray-600'
+                            } text-white">
+                                ${item.status.toUpperCase()}
+                            </span>
+                            <div class="text-gray-400 text-sm mt-1">${item.wordCount > 0 ? item.wordCount + ' words' : item.estimatedTime}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="bg-gray-600 rounded-full h-2 flex-1">
+                            <div class="h-2 rounded-full ${item.progress === 100 ? 'bg-green-500' : 'bg-blue-500'}" style="width: ${item.progress}%"></div>
+                        </div>
+                        <span class="text-gray-400 text-sm">${Math.round(item.progress)}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Initialize
+        document.getElementById('niche').addEventListener('change', updatePreview);
+        updatePreview();
+        updateQueue();
+    </script>
+</body>
+</html>
