@@ -196,24 +196,34 @@ Generate comprehensive, high-quality content that serves consumers while meeting
   const callClaudeAPI = async (prompt) => {
     addToLog('Making Claude API call for content generation');
     
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4000,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 4000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.content || !data.content[0] || !data.content[0].text) {
+        throw new Error('Invalid API response format');
+      }
+      
+      return data.content[0].text;
+    } catch (error) {
+      addToLog(`API call failed: ${error.message}`);
+      throw new Error(`Content generation failed: ${error.message}`);
     }
-
-    const data = await response.json();
-    return data.content[0].text;
   };
 
   const addDisclaimers = (content) => {
