@@ -1,11 +1,11 @@
-// Enhanced SEO Expert Serverless Function - /api/generate-content.js
-// Empire Intelligence System V16.0 - Production SEO Optimization
+// FIXED - Enhanced SEO Expert Serverless Function - /api/generate-content.js
+// Empire Intelligence System V16.1 - Production SEO Optimization (400 Error Fix)
 
 export default async function handler(req, res) {
   // CORS headers for cross-origin requests
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -18,11 +18,21 @@ export default async function handler(req, res) {
   try {
     const { niche, product, keywords, modelTier, targetUrl } = req.body;
 
+    // Enhanced input validation with detailed error messages
     if (!niche || !product || !keywords) {
       return res.status(400).json({ 
-        error: 'Missing required fields: niche, product, keywords' 
+        error: 'Missing required fields',
+        details: {
+          niche: !niche ? 'Required' : 'OK',
+          product: !product ? 'Required' : 'OK', 
+          keywords: !keywords ? 'Required' : 'OK'
+        }
       });
     }
+
+    // Validate modelTier
+    const validTiers = ['efficient', 'standard', 'premium'];
+    const selectedTier = modelTier && validTiers.includes(modelTier) ? modelTier : 'standard';
 
     // Model configuration with SEO optimization focus
     const modelConfig = {
@@ -33,7 +43,7 @@ export default async function handler(req, res) {
         cost: 0.06
       },
       'standard': {
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-3-sonnet-20240229', 
         maxTokens: 3000,
         targetWords: 2200,
         cost: 0.15
@@ -46,10 +56,10 @@ export default async function handler(req, res) {
       }
     };
 
-    const selectedModel = modelConfig[modelTier] || modelConfig['standard'];
+    const selectedModel = modelConfig[selectedTier];
 
     // Enhanced SEO Expert Content Generation Prompt with CRITICAL Quality Enforcement
-    const contentPrompt = `You are the world's foremost SEO content optimization expert. You MUST generate a comprehensive article that meets ALL specifications below. Failure to meet ANY requirement will result in content rejection.
+    const contentPrompt = `You are the world's foremost SEO content optimization expert. You MUST generate a comprehensive article that meets ALL specifications below. 
 
 **NON-NEGOTIABLE SEO REQUIREMENTS:**
 - MANDATORY H1 Title: Start article with "# [SEO Title Here]" containing "${keywords}" (50-60 chars)
@@ -59,7 +69,7 @@ export default async function handler(req, res) {
 - Mandatory Formatting: Minimum 15 **bold phrases**, 20+ bullet points (-)
 - Keyword Optimization: "${keywords}" density 1.5-2.5%, natural integration
 
-**NICHE-SPECIFIC DETAILS:**
+**PRODUCT DETAILS:**
 - Niche: ${niche}
 - Product Focus: ${product}
 - Primary Keywords: ${keywords}
@@ -73,20 +83,20 @@ export default async function handler(req, res) {
 
 ## What is ${product}? Complete Overview
 ### Understanding ${product} Fundamentals
-### Key Ingredients and Composition
+### Key Ingredients and Composition  
 ### How ${product} Differs from Alternatives
 
 ## Top Benefits and Features of ${product}
 ### Primary Health Benefits
 - [Bullet point 1]
-- [Bullet point 2]
+- [Bullet point 2] 
 - [Bullet point 3]
 ### Secondary Advantages
 ### Long-term Benefits
 
 ## How ${product} Works in Your Body
 ### Mechanism of Action
-### Absorption and Bioavailability  
+### Absorption and Bioavailability
 ### Timeline of Effects
 
 ## Clinical Research and Scientific Studies
@@ -133,35 +143,36 @@ export default async function handler(req, res) {
 [Compelling summary with strong call-to-action]
 
 **AFFILIATE LINK INTEGRATION REQUIREMENTS:**
-- Use these exact anchor text variations:
-  1. "[check current prices and availability](${targetUrl || 'https://example-affiliate-link.com'})"
-  2. "[see verified customer reviews](${targetUrl || 'https://example-affiliate-link.com'})"  
-  3. "[get exclusive discount here](${targetUrl || 'https://example-affiliate-link.com'})"
-  4. "[shop authentic ${product}](${targetUrl || 'https://example-affiliate-link.com'})"
-  5. "[compare pricing options](${targetUrl || 'https://example-affiliate-link.com'})"
-  6. "[secure your supply today](${targetUrl || 'https://example-affiliate-link.com'})"
-  7. "[view latest deals](${targetUrl || 'https://example-affiliate-link.com'})"
+Use these exact anchor text variations:
+1. "[check current prices and availability](${targetUrl || 'https://example-affiliate-link.com'})"
+2. "[see verified customer reviews](${targetUrl || 'https://example-affiliate-link.com'})"
+3. "[get exclusive discount here](${targetUrl || 'https://example-affiliate-link.com'})"
+4. "[shop authentic ${product}](${targetUrl || 'https://example-affiliate-link.com'})"
+5. "[compare pricing options](${targetUrl || 'https://example-affiliate-link.com'})"
+6. "[secure your supply today](${targetUrl || 'https://example-affiliate-link.com'})"
+7. "[view latest deals](${targetUrl || 'https://example-affiliate-link.com'})"
 
-**FORMATTING STANDARDS:**
-- Bold important phrases, product names, key benefits
-- Use bullet points for features, benefits, pros/cons
-- Include numbered lists for steps, tips, guidelines
-- Add comparison tables where relevant
-- Ensure proper paragraph breaks for readability
+**CRITICAL FORMATTING ENFORCEMENT:**
+- Every important phrase, product name, and key benefit MUST be **bolded**
+- Use bullet points (-) for ALL lists, features, benefits, pros/cons
+- Include numbered lists (1., 2., 3.) for steps, procedures, rankings
+- Bold the first instance of ${product} in each major section
 
-**COMPLIANCE & QUALITY:**
-- Include FTC affiliate disclosure
-- YMYL medical disclaimers for health content
-- Evidence-based claims with authoritative tone
-- Professional, trustworthy voice throughout
-- No exaggerated claims or false promises
+**COMPLIANCE REQUIREMENTS:**
+- Include FTC disclosure: "This article contains affiliate links. We may earn a commission if you make a purchase through these links at no extra cost to you."
+- Add health disclaimer: "This product has not been evaluated by the FDA. It is not intended to diagnose, treat, cure, or prevent any disease. Consult your healthcare provider before use."
 
-**NICHE-SPECIFIC OPTIMIZATION:**
-${getNicheSpecificGuidance(niche)}
+Write the complete article now. Every requirement must be met. Count your words to exceed ${selectedModel.targetWords} words.`;
 
-Generate the complete article now, ensuring every requirement is met. Focus on delivering exceptional value while maintaining commercial intent. The content must exceed ${selectedModel.targetWords} words and include all specified elements.`;
+    // Check API key
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(500).json({ 
+        error: 'Server configuration error',
+        details: 'API key not configured'
+      });
+    }
 
-    // Generate content using Claude API
+    // Generate content using Claude API with corrected headers
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -183,11 +194,23 @@ Generate the complete article now, ensuring every requirement is met. Focus on d
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Claude API Error:', errorData);
-      throw new Error(`Claude API request failed: ${response.status}`);
+      console.error('Claude API Error:', response.status, errorData);
+      return res.status(500).json({ 
+        error: 'Claude API request failed',
+        status: response.status,
+        details: errorData
+      });
     }
 
     const data = await response.json();
+    
+    if (!data.content || !data.content[0] || !data.content[0].text) {
+      return res.status(500).json({
+        error: 'Invalid response from Claude API',
+        response: data
+      });
+    }
+
     const content = data.content[0].text;
 
     // Enhanced SEO Quality Validation
@@ -200,6 +223,7 @@ Generate the complete article now, ensuring every requirement is met. Focus on d
       qualityBreakdown: qualityAnalysis.breakdown,
       seoMetrics: qualityAnalysis.seoMetrics,
       modelUsed: selectedModel.model,
+      modelTier: selectedTier,
       estimatedCost: selectedModel.cost,
       wordCount: qualityAnalysis.wordCount,
       complianceStatus: qualityAnalysis.compliance,
@@ -210,50 +234,16 @@ Generate the complete article now, ensuring every requirement is met. Focus on d
     console.error('Content generation error:', error);
     return res.status(500).json({ 
       error: 'Content generation failed', 
-      details: error.message 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-}
-
-// Niche-specific optimization guidance
-function getNicheSpecificGuidance(niche) {
-  const nicheGuides = {
-    'Health & Supplements': `
-- Focus on evidence-based benefits, clinical studies, ingredient analysis
-- Include dosage recommendations, safety profiles, FDA disclaimers
-- Address common health concerns and lifestyle integration
-- Compare with similar supplements in market
-- Emphasize quality, purity, third-party testing`,
-    
-    'Technology': `
-- Technical specifications, performance benchmarks, compatibility
-- User experience analysis, interface design, feature comparisons  
-- Integration capabilities, scalability, security considerations
-- Price-performance ratios, ROI analysis, implementation costs
-- Future-proofing and update policies`,
-    
-    'Finance': `
-- Risk analysis, regulatory compliance, fee structures
-- Performance tracking, ROI calculations, market comparisons
-- User security, data protection, customer support quality
-- Integration with existing financial tools and platforms
-- Long-term value proposition and growth potential`,
-    
-    'E-commerce': `
-- Product quality analysis, shipping and return policies
-- Customer service evaluation, warranty information
-- Price competitiveness, value proposition analysis
-- User reviews synthesis, brand reputation assessment
-- Integration with popular platforms and payment methods`
-  };
-
-  return nicheGuides[niche] || nicheGuides['Health & Supplements'];
 }
 
 // Advanced SEO Quality Validation System
 function performAdvancedSEOValidation(content, keywords, targetWords, product) {
   const analysis = {
-    wordCount: content.split(/\s+/).length,
+    wordCount: content.split(/\s+/).filter(word => word.length > 0).length,
     breakdown: {},
     seoMetrics: {},
     compliance: {},
@@ -294,7 +284,7 @@ function performAdvancedSEOValidation(content, keywords, targetWords, product) {
 
   // Formatting Validation
   const boldCount = (content.match(/\*\*[^*]+\*\*/g) || []).length;
-  const bulletCount = (content.match(/^[\s]*[-*+]\s+/gm) || []).length;
+  const bulletCount = (content.match(/^[\s]*-\s+/gm) || []).length;
   analysis.breakdown.formatting = {
     score: (boldCount >= 15 && bulletCount >= 20) ? 100 : Math.min(90, (boldCount * 3) + (bulletCount * 2)),
     details: `${boldCount} bold phrases, ${bulletCount} bullet points`,
@@ -304,7 +294,7 @@ function performAdvancedSEOValidation(content, keywords, targetWords, product) {
   // Keyword Density Analysis
   const keywordRegex = new RegExp(keywords.replace(/\s+/g, '\\s+'), 'gi');
   const keywordMatches = (content.match(keywordRegex) || []).length;
-  const keywordDensity = (keywordMatches / analysis.wordCount * 100).toFixed(2);
+  const keywordDensity = analysis.wordCount > 0 ? (keywordMatches / analysis.wordCount * 100).toFixed(2) : 0;
   analysis.seoMetrics.keywordDensity = {
     density: `${keywordDensity}%`,
     occurrences: keywordMatches,
@@ -335,7 +325,7 @@ function performAdvancedSEOValidation(content, keywords, targetWords, product) {
 
   // Calculate Overall Score
   const scores = Object.values(analysis.breakdown).map(item => item.score);
-  analysis.overallScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  analysis.overallScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
 
   // Generate Optimization Suggestions
   if (analysis.breakdown.h1Title.score < 90) {
