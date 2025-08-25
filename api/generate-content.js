@@ -1,6 +1,6 @@
 // /api/generate-content.js
 // Vercel Serverless Function for Empire Intelligence System
-// Handles Claude API calls server-side to resolve CORS issues
+// CORRECTED VERSION - Fixed API headers and model name
 
 export default async function handler(req, res) {
   // Set CORS headers for frontend access
@@ -38,7 +38,13 @@ export default async function handler(req, res) {
       sourceMaterial, 
       targetAudience, 
       wordCount,
-      additionalRequirements 
+      additionalRequirements,
+      keyword,
+      affiliateLink,
+      companyName,
+      email,
+      phone,
+      authorCredentials
     } = req.body;
 
     // Validate required fields
@@ -57,19 +63,27 @@ export default async function handler(req, res) {
       sourceMaterial,
       targetAudience,
       wordCount,
-      additionalRequirements
+      additionalRequirements,
+      keyword,
+      affiliateLink,
+      companyName,
+      email,
+      phone,
+      authorCredentials
     });
 
-    // Call Anthropic Claude API
+    console.log('Making Claude API call...');
+
+    // Call Anthropic Claude API with CORRECT headers
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': apiKey,
+        'x-api-key': apiKey,  // FIXED: lowercase x-api-key
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-3-5-sonnet-20241022',  // FIXED: Updated model
         max_tokens: 4000,
         messages: [{
           role: 'user',
@@ -78,18 +92,23 @@ export default async function handler(req, res) {
       })
     });
 
+    console.log('Claude API response status:', claudeResponse.status);
+
     if (!claudeResponse.ok) {
       const errorData = await claudeResponse.text();
       console.error('Claude API Error:', errorData);
       return res.status(claudeResponse.status).json({
         error: 'Content generation failed',
         message: 'API service temporarily unavailable',
-        statusCode: claudeResponse.status
+        statusCode: claudeResponse.status,
+        details: errorData
       });
     }
 
     const data = await claudeResponse.json();
     const generatedContent = data.content[0].text;
+
+    console.log('Content generated successfully');
 
     // Calculate quality score
     const qualityScore = calculateQualityScore(generatedContent, {
@@ -121,7 +140,8 @@ export default async function handler(req, res) {
     console.error('Serverless function error:', error);
     res.status(500).json({
       error: 'Internal server error',
-      message: 'Content generation failed unexpectedly'
+      message: 'Content generation failed unexpectedly',
+      details: error.message
     });
   }
 }
@@ -134,9 +154,15 @@ function buildContentPrompt({
   sourceMaterial,
   targetAudience,
   wordCount,
-  additionalRequirements
+  additionalRequirements,
+  keyword,
+  affiliateLink,
+  companyName,
+  email,
+  phone,
+  authorCredentials
 }) {
-  const basePrompt = `Generate professional ${contentType} content for ${niche} niche, optimized for ${platform} platform.
+  const basePrompt = `Generate professional ${contentType} content about "${keyword}" for ${niche} niche, optimized for ${platform} platform.
 
 CONTENT SPECIFICATIONS:
 - Niche: ${niche}
@@ -144,10 +170,11 @@ CONTENT SPECIFICATIONS:
 - Platform: ${platform}
 - Target Word Count: ${wordCount || '500-800'} words
 - Target Audience: ${targetAudience || 'General audience'}
+- Keyword Focus: ${keyword}
 
 QUALITY REQUIREMENTS:
 - Professional, authoritative tone
-- SEO-optimized structure
+- SEO-optimized structure with ${keyword} integration
 - Industry-specific expertise
 - Factual accuracy required
 - Engaging and valuable content
@@ -159,7 +186,19 @@ COMPLIANCE REQUIREMENTS:
 - Professional disclaimers where required
 
 SOURCE MATERIAL INTEGRATION:
-${sourceMaterial ? `Base content on the following source material:\n${sourceMaterial}\n` : 'Generate original, well-researched content'}
+${sourceMaterial ? `Base content strictly on this source material:\n${sourceMaterial}\n` : 'Generate original, well-researched content'}
+
+${contentType === 'affiliate' && affiliateLink ? `
+AFFILIATE INTEGRATION:
+- Include this affiliate link naturally: ${affiliateLink}
+- Add clear affiliate disclosure
+` : ''}
+
+COMPANY INFORMATION:
+${companyName ? `Company: ${companyName}` : ''}
+${email ? `Contact: ${email}` : ''}
+${phone ? `Phone: ${phone}` : ''}
+${authorCredentials ? `Author: ${authorCredentials}` : ''}
 
 ADDITIONAL REQUIREMENTS:
 ${additionalRequirements || 'Follow standard industry best practices'}
