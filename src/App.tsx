@@ -123,10 +123,10 @@ const ProductionEmpireIntelligence = () => {
       setCurrentStep('generating');
       addToLog('Generating content with Claude API');
       
-      const niche = nicheTemplates[selectedNiche];
-      const platform = platformRules[platform];
+      const nicheTemplate = nicheTemplates[selectedNiche];
+      const platformRule = platformRules[platform];
       
-      const contentPrompt = buildContentPrompt(niche, platform);
+      const contentPrompt = buildContentPrompt(nicheTemplate, platformRule);
       const content = await callClaudeAPI(contentPrompt);
       
       // Step 3: Add disclaimers
@@ -137,7 +137,7 @@ const ProductionEmpireIntelligence = () => {
       // Step 4: Quality validation
       setCurrentStep('validation');
       addToLog('Validating content quality');
-      const quality = validateContent(compliantContent, niche);
+      const quality = validateContent(compliantContent, nicheTemplate);
       
       setGeneratedContent(compliantContent);
       setQualityScore(quality);
