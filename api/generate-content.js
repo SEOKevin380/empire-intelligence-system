@@ -1,6 +1,6 @@
 // /api/generate-content.js
 // Vercel Serverless Function for Empire Intelligence System
-// CORRECTED VERSION - Fixed API headers and model name
+// Production ready with guaranteed working model
 
 export default async function handler(req, res) {
   // Set CORS headers for frontend access
@@ -74,16 +74,16 @@ export default async function handler(req, res) {
 
     console.log('Making Claude API call...');
 
-    // Call Anthropic Claude API with CORRECT headers
+    // Call Anthropic Claude API
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,  // FIXED: lowercase x-api-key
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',  // FIXED: Updated model
+        model: 'claude-3-haiku-20240307',
         max_tokens: 4000,
         messages: [{
           role: 'user',
