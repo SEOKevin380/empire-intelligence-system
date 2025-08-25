@@ -106,60 +106,71 @@ const ProductionEmpireIntelligence = () => {
   };
 
   // SIMPLIFIED CONTENT GENERATION
-  const generateContent = async () => {
-    if (!keyword.trim() || !sourceMaterial.trim()) return;
-    if (contentType === 'affiliate' && !affiliateLink.trim()) return;
+const generateContent = async () => {
+  if (!selectedNiche || !contentType || !platform) {
+    setError('Please select niche, content type, and platform');
+    return;
+  }
 
-    setIsGenerating(true);
-    setCurrentStep('analyzing');
-    setGenerationLog([]);
+  setIsGenerating(true);
+  setError('');
+  setGeneratedContent('');
+  setQualityScore(0);
+  setDisclaimers([]);
 
-    try {
-      // Step 1: Analyze niche and platform
-      addToLog('Analyzing selected niche and platform requirements');
-      await new Promise(resolve => setTimeout(resolve, 1000));
+  try {
+    // Call our serverless API instead of Anthropic directly
+    const response = await fetch('/api/generate-content', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        niche: selectedNiche,
+        contentType,
+        platform,
+        sourceMaterial,
+        targetAudience,
+        wordCount,
+        additionalRequirements
+      }),
+    });
 
-      // Step 2: Generate content with Claude API
-      setCurrentStep('generating');
-      addToLog('Generating content with Claude API');
-      
-      const nicheTemplate = nicheTemplates[selectedNiche];
-      const platformRule = platformRules[platform];
-      
-      const contentPrompt = buildContentPrompt(nicheTemplate, platformRule);
-      const content = await callClaudeAPI(contentPrompt);
-      
-      // Step 3: Add disclaimers
-      setCurrentStep('compliance');
-      addToLog('Adding compliance disclaimers');
-      const compliantContent = addDisclaimers(content);
-      
-      // Step 4: Quality validation
-      setCurrentStep('validation');
-      addToLog('Validating content quality');
-      const quality = validateContent(compliantContent, nicheTemplate);
-      
-      setGeneratedContent(compliantContent);
-      setQualityScore(quality);
-      setCurrentStep('complete');
-      addToLog(`Content generation complete - Quality Score: ${quality}%`);
-
-    } catch (error) {
-      console.error('Generation error:', error);
-      setCurrentStep('error');
-      addToLog(`Error: ${error.message}`);
-    } finally {
-      setIsGenerating(false);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
-  };
 
-  const addToLog = (message) => {
-    setGenerationLog(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
-  };
+    const data = await response.json();
 
-  const buildContentPrompt = (niche, platform) => {
-    return `You are a world-class content writer creating ${contentType} content about "${keyword}" for ${niche.name}.
+    if (data.success) {
+      setGeneratedContent(data.content);
+      setQualityScore(data.qualityScore);
+      setDisclaimers(data.disclaimers);
+      
+      // Show success message
+      setError('');
+    } else {
+      throw new Error(data.message || 'Content generation failed');
+    }
 
+  } catch (error) {
+    console.error('Content generation error:', error);
+    
+    // Provide user-friendly error messages
+    if (error.message.includes('fetch')) {
+      setError('Network error. Please check your connection and try again.');
+    } else if (error.message.includes('500')) {
+      setError('Server error. Please try again in a few moments.');
+    } else if (error.message.includes('API key')) {
+      setError('Service configuration error. Please contact support.');
+    } else {
+      setError(error.message || 'An unexpected error occurred. Please try again.');
+    }
+  } finally {
+    setIsGenerating(false);
+  }
+};
 MANDATORY SOURCE MATERIAL (USE ONLY THESE FACTS):
 ${sourceMaterial}
 
