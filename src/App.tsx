@@ -12,6 +12,9 @@ const ProductionEmpireIntelligence = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [authorCredentials, setAuthorCredentials] = useState('');
+  const [targetAudience, setTargetAudience] = useState('');
+  const [wordCount, setWordCount] = useState('');
+  const [additionalRequirements, setAdditionalRequirements] = useState('');
   
   // NICHE SELECTION (SIMPLIFIED)
   const [selectedNiche, setSelectedNiche] = useState('health-supplements');
@@ -24,10 +27,10 @@ const ProductionEmpireIntelligence = () => {
   
   // GENERATION STATE
   const [isGenerating, setIsGenerating] = useState(false);
-  const [currentStep, setCurrentStep] = useState('ready');
   const [generatedContent, setGeneratedContent] = useState('');
   const [qualityScore, setQualityScore] = useState(0);
-  const [generationLog, setGenerationLog] = useState([]);
+  const [disclaimers, setDisclaimers] = useState([]);
+  const [error, setError] = useState('');
 
   // SIMPLIFIED NICHE TEMPLATES
   const nicheTemplates = {
@@ -97,190 +100,85 @@ const ProductionEmpireIntelligence = () => {
     }
   };
 
-  // DISCLAIMER TEMPLATES
-  const disclaimerTemplates = {
-    medical: "⚠️ MEDICAL DISCLAIMER: This content is for informational purposes only and is not intended as medical advice. The information provided should not be used for diagnosing or treating a health condition. Always consult with a qualified healthcare professional before making health decisions or taking supplements.",
-    financial: "⚠️ FINANCIAL DISCLAIMER: This content is for informational purposes only and should not be considered financial advice. Investment decisions should be made after consulting with qualified financial professionals. Past performance does not guarantee future results.",
-    general: "📋 INFORMATIONAL PURPOSE: This content is provided for educational and informational purposes only. Individual results may vary. We recommend consulting with relevant professionals for personalized advice.",
-    affiliate: "🔔 AFFILIATE DISCLOSURE: This article contains affiliate links. We may earn a commission if you purchase products through our links, at no additional cost to you. This helps support our research and content creation. We only recommend products we genuinely believe in."
-  };
-
-  // SIMPLIFIED CONTENT GENERATION
-const generateContent = async () => {
-  if (!selectedNiche || !contentType || !platform) {
-    setError('Please select niche, content type, and platform');
-    return;
-  }
-
-  setIsGenerating(true);
-  setError('');
-  setGeneratedContent('');
-  setQualityScore(0);
-  setDisclaimers([]);
-
-  try {
-    // Call our serverless API instead of Anthropic directly
-    const response = await fetch('/api/generate-content', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        niche: selectedNiche,
-        contentType,
-        platform,
-        sourceMaterial,
-        targetAudience,
-        wordCount,
-        additionalRequirements
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  // SERVERLESS API CONTENT GENERATION
+  const generateContent = async () => {
+    if (!selectedNiche || !contentType || !platform) {
+      setError('Please select niche, content type, and platform');
+      return;
     }
 
-    const data = await response.json();
-
-    if (data.success) {
-      setGeneratedContent(data.content);
-      setQualityScore(data.qualityScore);
-      setDisclaimers(data.disclaimers);
-      
-      // Show success message
-      setError('');
-    } else {
-      throw new Error(data.message || 'Content generation failed');
+    if (!keyword.trim() || !sourceMaterial.trim()) {
+      setError('Keyword and source material are required');
+      return;
     }
 
-  } catch (error) {
-    console.error('Content generation error:', error);
-    
-    // Provide user-friendly error messages
-    if (error.message.includes('fetch')) {
-      setError('Network error. Please check your connection and try again.');
-    } else if (error.message.includes('500')) {
-      setError('Server error. Please try again in a few moments.');
-    } else if (error.message.includes('API key')) {
-      setError('Service configuration error. Please contact support.');
-    } else {
-      setError(error.message || 'An unexpected error occurred. Please try again.');
+    if (contentType === 'affiliate' && !affiliateLink.trim()) {
+      setError('Affiliate link is required for affiliate content');
+      return;
     }
-  } finally {
-    setIsGenerating(false);
-  }
-};
-MANDATORY SOURCE MATERIAL (USE ONLY THESE FACTS):
-${sourceMaterial}
 
-CONTENT REQUIREMENTS:
-- Target Length: ${niche.targetWords} words minimum
-- Content Structure: ${niche.structure}
-- Tone: ${niche.tone}
-- Content Type: ${contentType === 'affiliate' ? 'Affiliate marketing with product recommendations' : 'Educational/informational only'}
-- Platform: ${platform.name} (Compliance: ${platform.compliance})
+    setIsGenerating(true);
+    setError('');
+    setGeneratedContent('');
+    setQualityScore(0);
+    setDisclaimers([]);
 
-${contentType === 'affiliate' ? `
-AFFILIATE INTEGRATION:
-- Naturally integrate this affiliate link: ${affiliateLink}
-- Include product recommendations from source material
-- Use consumer-focused buying guide format
-` : `
-EDUCATIONAL FOCUS:
-- Pure informational content for E-E-A-T building
-- No promotional language or product pushing
-- Focus on education and expertise demonstration
-`}
-
-PLATFORM COMPLIANCE (${platform.name}):
-Restrictions: ${platform.restrictions.join(', ')}
-Requirements: ${platform.requirements.join(', ')}
-
-AUTHOR CREDENTIALS: ${authorCredentials || 'Industry expert'}
-COMPANY: ${companyName}
-CONTACT: ${email} | ${phone}
-
-Generate comprehensive, high-quality content that serves consumers while meeting all compliance requirements. Use ONLY facts from the source material provided.`;
-  };
-
-  const callClaudeAPI = async (prompt) => {
-    addToLog('Making Claude API call for content generation');
-    
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
+      // Call our serverless API instead of Anthropic directly
+      const response = await fetch('/api/generate-content', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          messages: [{ role: "user", content: prompt }]
-        })
+          niche: selectedNiche,
+          contentType,
+          platform,
+          sourceMaterial,
+          targetAudience: targetAudience || 'General audience',
+          wordCount: wordCount || nicheTemplates[selectedNiche].targetWords,
+          additionalRequirements: additionalRequirements || 'Follow industry best practices',
+          keyword,
+          affiliateLink,
+          companyName,
+          email,
+          phone,
+          authorCredentials
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status} - ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      
-      if (!data.content || !data.content[0] || !data.content[0].text) {
-        throw new Error('Invalid API response format');
+
+      if (data.success) {
+        setGeneratedContent(data.content);
+        setQualityScore(data.qualityScore);
+        setDisclaimers(data.disclaimers);
+        setError('');
+      } else {
+        throw new Error(data.message || 'Content generation failed');
       }
-      
-      return data.content[0].text;
+
     } catch (error) {
-      addToLog(`API call failed: ${error.message}`);
-      throw new Error(`Content generation failed: ${error.message}`);
+      console.error('Content generation error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.message.includes('fetch')) {
+        setError('Network error. Please check your connection and try again.');
+      } else if (error.message.includes('500')) {
+        setError('Server error. Please try again in a few moments.');
+      } else if (error.message.includes('API key')) {
+        setError('Service configuration error. Please contact support.');
+      } else {
+        setError(error.message || 'An unexpected error occurred. Please try again.');
+      }
+    } finally {
+      setIsGenerating(false);
     }
-  };
-
-  const addDisclaimers = (content) => {
-    let disclaimers = [];
-    
-    if (medicalDisclaimer) disclaimers.push(disclaimerTemplates.medical);
-    if (financialDisclaimer) disclaimers.push(disclaimerTemplates.financial);
-    if (generalDisclaimer) disclaimers.push(disclaimerTemplates.general);
-    if (contentType === 'affiliate' && affiliateDisclaimer) disclaimers.push(disclaimerTemplates.affiliate);
-
-    const disclaimerSection = disclaimers.length > 0 ? 
-      `\n\n---\n\nIMPORTANT DISCLAIMERS:\n\n${disclaimers.join('\n\n')}\n\n---\n\n` : '';
-
-    return disclaimerSection + content;
-  };
-
-  const validateContent = (content, niche) => {
-    let score = 0;
-    const words = content.split(' ').length;
-    
-    // Length check (30 points)
-    if (words >= niche.targetWords) score += 30;
-    else if (words >= niche.targetWords * 0.8) score += 20;
-    else score += 10;
-    
-    // Keyword density (20 points)
-    const keywordCount = (content.toLowerCase().match(new RegExp(keyword.toLowerCase(), 'g')) || []).length;
-    const density = (keywordCount / words) * 100;
-    if (density >= 1.0 && density <= 2.5) score += 20;
-    else if (density >= 0.5 && density <= 3.0) score += 15;
-    else score += 5;
-    
-    // Source material integration (25 points)
-    if (sourceMaterial.length > 500) score += 25;
-    else if (sourceMaterial.length > 200) score += 15;
-    else score += 5;
-    
-    // Compliance (15 points)
-    if (medicalDisclaimer || financialDisclaimer || generalDisclaimer) score += 15;
-    else score += 5;
-    
-    // Professional structure (10 points)
-    if (companyName && email) score += 10;
-    else score += 5;
-    
-    return Math.min(score, 100);
   };
 
   return (
@@ -303,15 +201,29 @@ Generate comprehensive, high-quality content that serves consumers while meeting
         color: 'white'
       }}>
         <h1 style={{ fontSize: '2.2em', marginBottom: '10px' }}>
-          🚀 EMPIRE INTELLIGENCE SYSTEM - PRODUCTION READY
+          EMPIRE INTELLIGENCE SYSTEM - PRODUCTION READY
         </h1>
         <h2 style={{ fontSize: '1.3em', marginBottom: '15px', opacity: 0.9 }}>
-          Professional Content Generation • Live Claude API • Multi-Niche Support
+          Professional Content Generation • Serverless Architecture • Multi-Niche Support
         </h2>
         <div style={{ fontSize: '16px', opacity: 0.8 }}>
-          Simplified for immediate deployment • Optimized for reliability • Ready for scaling
+          CORS-Free Architecture • Claude API Integration • Production Deployed
         </div>
       </div>
+
+      {/* ERROR DISPLAY */}
+      {error && (
+        <div style={{ 
+          backgroundColor: '#f8d7da', 
+          color: '#721c24', 
+          padding: '15px', 
+          borderRadius: '8px', 
+          marginBottom: '20px',
+          border: '1px solid #f5c6cb'
+        }}>
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       {/* MAIN INPUT FORM */}
       <div style={{ 
@@ -321,7 +233,7 @@ Generate comprehensive, high-quality content that serves consumers while meeting
         marginBottom: '25px',
         boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
       }}>
-        <h2 style={{ color: '#2c3e50', marginBottom: '25px' }}>🎯 Content Generation Settings</h2>
+        <h2 style={{ color: '#2c3e50', marginBottom: '25px' }}>Content Generation Settings</h2>
         
         {/* Core Settings */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '25px' }}>
@@ -483,7 +395,7 @@ Generate comprehensive, high-quality content that serves consumers while meeting
           border: '3px solid #ff9800'
         }}>
           <h3 style={{ color: '#e65100', marginBottom: '15px' }}>
-            📋 Source Material (Required for Factual Accuracy)
+            Source Material (Required for Factual Accuracy)
           </h3>
           
           <textarea
@@ -491,7 +403,7 @@ Generate comprehensive, high-quality content that serves consumers while meeting
             onChange={(e) => setSourceMaterial(e.target.value)}
             placeholder="PASTE COMPLETE SOURCE MATERIAL HERE:
 
-✅ SUPPORTED NICHES:
+SUPPORTED NICHES:
 - Health & Supplements: Product specs, clinical studies, ingredients, benefits
 - Technology: Features, specifications, user guides, reviews, comparisons
 - Finance: Terms, rates, regulations, risk disclosures, analysis
@@ -512,72 +424,36 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
           />
         </div>
 
-        {/* Compliance Configuration */}
+        {/* Optional Settings */}
         <div style={{ 
           backgroundColor: '#e8f5e8', 
           padding: '20px', 
           borderRadius: '10px', 
-          marginBottom: '25px',
-          border: '2px solid #4caf50'
+          marginBottom: '25px'
         }}>
-          <h3 style={{ color: '#2e7d32', marginBottom: '15px' }}>⚖️ Compliance & Disclaimers</h3>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div>
-              <h4 style={{ color: '#1b5e20', marginBottom: '10px' }}>Required Disclaimers:</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', color: '#2e7d32' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={medicalDisclaimer}
-                    onChange={(e) => setMedicalDisclaimer(e.target.checked)}
-                    style={{ marginRight: '8px' }}
-                  />
-                  Medical/Health Disclaimer
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', color: '#2e7d32' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={financialDisclaimer}
-                    onChange={(e) => setFinancialDisclaimer(e.target.checked)}
-                    style={{ marginRight: '8px' }}
-                  />
-                  Financial Disclaimer
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', color: '#2e7d32' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={generalDisclaimer}
-                    onChange={(e) => setGeneralDisclaimer(e.target.checked)}
-                    style={{ marginRight: '8px' }}
-                  />
-                  General Informational Disclaimer
-                </label>
-                {contentType === 'affiliate' && (
-                  <label style={{ display: 'flex', alignItems: 'center', color: '#2e7d32' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={affiliateDisclaimer}
-                      onChange={(e) => setAffiliateDisclaimer(e.target.checked)}
-                      style={{ marginRight: '8px' }}
-                    />
-                    FTC Affiliate Disclosure
-                  </label>
-                )}
-              </div>
-            </div>
-            
-            <div>
-              <h4 style={{ color: '#1b5e20', marginBottom: '10px' }}>Selected Niche Info:</h4>
-              <div style={{ backgroundColor: '#c8e6c9', padding: '15px', borderRadius: '8px' }}>
-                <div style={{ color: '#1b5e20', fontSize: '14px' }}>
-                  <p><strong>Category:</strong> {nicheTemplates[selectedNiche].name}</p>
-                  <p><strong>Structure:</strong> {nicheTemplates[selectedNiche].structure}</p>
-                  <p><strong>Target Words:</strong> {nicheTemplates[selectedNiche].targetWords}</p>
-                  <p><strong>YMYL Risk:</strong> {nicheTemplates[selectedNiche].ymyl.toUpperCase()}</p>
-                </div>
-              </div>
-            </div>
+          <h3 style={{ color: '#2e7d32', marginBottom: '15px' }}>Optional Settings</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
+            <input
+              type="text"
+              value={targetAudience}
+              onChange={(e) => setTargetAudience(e.target.value)}
+              placeholder="Target Audience (optional)"
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '14px' }}
+            />
+            <input
+              type="text"
+              value={wordCount}
+              onChange={(e) => setWordCount(e.target.value)}
+              placeholder="Word Count (optional)"
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '14px' }}
+            />
+            <input
+              type="text"
+              value={additionalRequirements}
+              onChange={(e) => setAdditionalRequirements(e.target.value)}
+              placeholder="Additional Requirements (optional)"
+              style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ced4da', fontSize: '14px' }}
+            />
           </div>
         </div>
 
@@ -590,7 +466,7 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
           border: '2px solid #2196f3'
         }}>
           <h4 style={{ color: '#1565c0', marginBottom: '10px' }}>
-            📋 {platformRules[platform].name} - Compliance Level: {platformRules[platform].compliance}
+            {platformRules[platform].name} - Compliance Level: {platformRules[platform].compliance}
           </h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', fontSize: '14px' }}>
             <div>
@@ -631,61 +507,12 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
               : 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)'
           }}
         >
-          {isGenerating ? '🔄 Generating Professional Content...' : 
-           !keyword.trim() || !sourceMaterial.trim() ? '⚠️ Keyword & Source Material Required' :
-           contentType === 'affiliate' && !affiliateLink.trim() ? '⚠️ Affiliate Link Required' :
-           '🚀 Generate Professional Content'}
+          {isGenerating ? 'Generating Professional Content...' : 
+           !keyword.trim() || !sourceMaterial.trim() ? 'Keyword & Source Material Required' :
+           contentType === 'affiliate' && !affiliateLink.trim() ? 'Affiliate Link Required' :
+           'Generate Professional Content'}
         </button>
       </div>
-
-      {/* GENERATION PROGRESS */}
-      {currentStep !== 'ready' && currentStep !== 'complete' && (
-        <div style={{ 
-          backgroundColor: '#fff', 
-          padding: '25px', 
-          borderRadius: '15px', 
-          marginBottom: '25px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{ color: '#2c3e50', marginBottom: '20px' }}>🔄 Generation Progress</h3>
-          
-          <div style={{
-            backgroundColor: currentStep === 'analyzing' ? '#3498db' : 
-                           currentStep === 'generating' ? '#e74c3c' :
-                           currentStep === 'compliance' ? '#f39c12' :
-                           currentStep === 'validation' ? '#27ae60' : '#95a5a6',
-            color: 'white',
-            padding: '15px 25px',
-            borderRadius: '25px',
-            display: 'inline-block',
-            fontSize: '16px',
-            fontWeight: 'bold'
-          }}>
-            {currentStep === 'analyzing' && '🔍 Analyzing Settings & Requirements'}
-            {currentStep === 'generating' && '✍️ Generating Content with Claude API'}
-            {currentStep === 'compliance' && '⚖️ Adding Compliance Disclaimers'}
-            {currentStep === 'validation' && '✅ Validating Content Quality'}
-          </div>
-          
-          {generationLog.length > 0 && (
-            <div style={{ 
-              marginTop: '20px', 
-              backgroundColor: '#f8f9fa', 
-              padding: '15px', 
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontFamily: 'monospace'
-            }}>
-              <h4 style={{ color: '#495057', marginBottom: '10px' }}>Generation Log:</h4>
-              {generationLog.map((logEntry, index) => (
-                <div key={index} style={{ color: '#6c757d', marginBottom: '2px' }}>
-                  {logEntry}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* QUALITY SCORE */}
       {qualityScore > 0 && (
@@ -700,7 +527,7 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
             color: qualityScore >= 85 ? '#155724' : qualityScore >= 70 ? '#0c5460' : '#856404',
             marginBottom: '15px'
           }}>
-            📊 Content Quality Score: {qualityScore}/100
+            Content Quality Score: {qualityScore}/100
             {qualityScore >= 85 && ' - PRODUCTION READY!'}
             {qualityScore >= 70 && qualityScore < 85 && ' - GOOD QUALITY'}
           </h3>
@@ -728,6 +555,31 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
         </div>
       )}
 
+      {/* DISCLAIMERS */}
+      {disclaimers.length > 0 && (
+        <div style={{
+          backgroundColor: '#fff3cd',
+          padding: '20px',
+          borderRadius: '10px',
+          marginBottom: '25px',
+          border: '2px solid #ffc107'
+        }}>
+          <h3 style={{ color: '#856404', marginBottom: '15px' }}>Compliance Disclaimers</h3>
+          {disclaimers.map((disclaimer, index) => (
+            <div key={index} style={{
+              backgroundColor: '#fff',
+              padding: '10px',
+              borderRadius: '5px',
+              marginBottom: '10px',
+              fontSize: '14px',
+              color: '#721c24'
+            }}>
+              {disclaimer}
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* GENERATED CONTENT */}
       {generatedContent && (
         <div style={{
@@ -738,7 +590,7 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
           marginBottom: '25px'
         }}>
           <h3 style={{ color: '#2c3e50', marginBottom: '20px' }}>
-            📝 Generated Professional Content
+            Generated Professional Content
             <span style={{ fontSize: '16px', color: '#666', marginLeft: '10px' }}>
               ({nicheTemplates[selectedNiche].name})
             </span>
@@ -778,7 +630,7 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
                 marginRight: '15px'
               }}
             >
-              📋 Copy Content
+              Copy Content
             </button>
             <button
               onClick={() => {
@@ -803,7 +655,7 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
                 cursor: 'pointer'
               }}
             >
-              💾 Download Content
+              Download Content
             </button>
           </div>
         </div>
@@ -818,15 +670,15 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
         borderLeft: '5px solid #17a2b8'
       }}>
         <h3 style={{ color: '#17a2b8', marginBottom: '15px' }}>
-          🚀 PRODUCTION EMPIRE INTELLIGENCE SYSTEM - LIVE & OPERATIONAL
+          PRODUCTION EMPIRE INTELLIGENCE SYSTEM - SERVERLESS ARCHITECTURE
         </h3>
         <div style={{ color: '#0c5460' }}>
           <p><strong>✅ Multi-Niche Support:</strong> Health, Tech, Finance, E-commerce with optimized templates</p>
-          <p><strong>✅ Live Claude API Integration:</strong> Real content generation with error handling</p>
+          <p><strong>✅ Serverless Claude API:</strong> CORS-free architecture with secure backend integration</p>
           <p><strong>✅ Professional Compliance:</strong> YMYL, FTC, and platform-specific requirements</p>
           <p><strong>✅ Quality Assurance:</strong> Automated scoring and validation</p>
-          <p><strong>✅ Production Ready:</strong> Simplified, reliable, scalable architecture</p>
-          <p><strong>✅ Team Friendly:</strong> Clear interface with guided inputs and validation</p>
+          <p><strong>✅ Production Ready:</strong> Scalable, reliable, team-friendly interface</p>
+          <p><strong>✅ Error Handling:</strong> Comprehensive user feedback and failsafe mechanisms</p>
         </div>
         
         <div style={{ 
@@ -836,11 +688,10 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
           borderRadius: '8px',
           border: '2px solid #27ae60'
         }}>
-          <h4 style={{ color: '#155724', margin: '0 0 10px 0' }}>🎯 READY FOR IMMEDIATE DEPLOYMENT</h4>
+          <h4 style={{ color: '#155724', margin: '0 0 10px 0' }}>SERVERLESS BACKEND DEPLOYED</h4>
           <p style={{ color: '#155724', margin: 0 }}>
-            <strong>Production-ready system deployed:</strong> Reliable Claude API integration, 
-            multi-niche support, comprehensive compliance, and professional quality assurance. 
-            Ready for your team to start generating content immediately.
+            <strong>CORS issue resolved:</strong> Your system now uses serverless functions to securely 
+            communicate with Claude API. No more browser restrictions, full production functionality restored.
           </p>
         </div>
       </div>
