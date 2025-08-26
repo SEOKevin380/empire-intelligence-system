@@ -146,24 +146,85 @@ Begin comprehensive generation now:
 
     console.log('Calling Anthropic API...');
     
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20240620', // CORRECTED: Valid Sonnet model name
-      max_tokens: 8000, // Higher limit for full content generation
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    });
+// Iterative generation function for long content
+const generateLongContent = async (anthropic, data, targetWords) => {
+  let fullContent = '';
+  let currentWordCount = 0;
+  let attempt = 1;
+  const maxAttempts = 3;
 
-    console.log('Anthropic API call successful');
-    
-    const content = message.content[0].text;
-    const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
-    const h2Count = (content.match(/<h2[^>]*>.*?<\/h2>/gi) || []).length;
+  while (currentWordCount < targetWords * 0.9 && attempt <= maxAttempts) {
+    console.log(`Generation attempt ${attempt}, current words: ${currentWordCount}, target: ${targetWords}`);
 
-    console.log(`Content generated: ${wordCount} words, ${h2Count} H2 sections`);
+    const isFirstGeneration = attempt === 1;
+    const remainingWords = targetWords - currentWordCount;
+    const targetForThisRound = Math.min(remainingWords, 3500); // Safe chunk size for Haiku
+
+    const prompt = `
+${isFirstGeneration ? 'CRITICAL SYSTEM CONSTRAINTS - BINDING REQUIREMENTS:' : 'CONTINUATION REQUIREMENTS:'}
+
+1. WORD COUNT FOR THIS SECTION: Generate approximately ${targetForThisRound} words ${isFirstGeneration ? 'to start' : 'to continue'} the content.
+2. ${isFirstGeneration ? `AFFILIATE LINK REQUIREMENT: Integrate "${data.affiliateLink || ''}" naturally 1-2 times in this section.` : 'Continue the professional tone and include 1 affiliate link if natural.'}
+3. FACTUAL ACCURACY: Base ALL information on the source material provided.
+4. ${isFirstGeneration ? 'START' : 'CONTINUE'} with comprehensive coverage of the topic.
+
+${isFirstGeneration ? `
+MANDATORY SOURCE MATERIAL:
+${data.sourceMaterial}
+
+PUBLICATION: ${data.publication}
+CONTENT TYPE: ${data.contentType}
+KEYWORD: ${data.keyword}
+COMPANY: ${data.companyName}, ${data.email}, ${data.phone}
+` : `
+CONTEXT: This is a continuation of content about ${data.keyword}. Continue the professional analysis and coverage.
+Previous content ended with: "${fullContent.slice(-200)}"
+`}
+
+${isFirstGeneration ? 'BEGIN' : 'CONTINUE'} comprehensive content generation:
+`;
+
+    try {
+      const message = await anthropic.messages.create({
+        model: 'claude-3-haiku-20240307', // Back to working Haiku model
+        max_tokens: 4000, // Max for Haiku
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
+      });
+
+      const newContent = message.content[0].text;
+      const newWordCount = newContent.split(/\s+/).filter(word => word.length > 0).length;
+      
+      console.log(`Attempt ${attempt} generated ${newWordCount} words`);
+
+      // Add content with proper spacing
+      if (fullContent && !fullContent.endsWith('\n\n')) {
+        fullContent += '\n\n';
+      }
+      fullContent += newContent;
+      currentWordCount += newWordCount;
+
+      attempt++;
+    } catch (error) {
+      console.error(`Generation attempt ${attempt} failed:`, error);
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+      attempt++;
+    }
+  }
+
+  return {
+    content: fullContent,
+    wordCount: currentWordCount,
+    attempts: attempt - 1,
+    targetMet: currentWordCount >= targetWords * 0.9
+  };
+};
 
     // Process affiliate link integration if provided
     let finalContent = content;
