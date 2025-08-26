@@ -1,300 +1,289 @@
-// BULLETPROOF /api/generate-content.js - SIMPLIFIED VERSION
+import { Anthropic } from '@anthropic-ai/sdk';
+
+// Initialize Anthropic client
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
+
 export default async function handler(req, res) {
-  console.log('=== API ROUTE HIT ===');
-  
-  // Set JSON headers immediately
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).json({ message: 'CORS preflight handled' });
+    res.status(200).end();
+    return;
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ 
-      error: 'Method not allowed',
-      received: req.method,
-      expected: 'POST'
-    });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
-
-  // Immediate test response to verify API route is working
-  if (!req.body) {
-    return res.status(400).json({
-      error: 'No request body received',
-      success: false
-    });
-  }
-
-  console.log('Request body keys:', Object.keys(req.body));
 
   try {
-    // Check if this is a test request
-    if (req.body.test === true) {
-      return res.status(200).json({
-        success: true,
-        message: 'API route is working',
+    // Extract and validate request data
+    const {
+      publication,
+      keyword,
+      wordCount,
+      affiliateLink,
+      sourceUrl,
+      sourceMaterial,
+      company,
+      email,
+      phone
+    } = req.body;
+
+    // Validate mandatory source material (Zero Failure Policy)
+    if (!sourceMaterial || sourceMaterial.trim().length === 0) {
+      return res.status(400).json({
+        error: 'Source material is mandatory for factual accuracy',
+        details: 'Zero Failure Policy requires source content',
+        success: false,
         timestamp: new Date().toISOString()
       });
     }
 
     // Validate required fields
-    const {
-      publication,
-      contentType, 
-      keyword,
-      companyName,
-      email,
-      phone,
-      sourceMaterial,
-      wordCountTarget = 8000
-    } = req.body;
-
-    const missingFields = [];
-    if (!publication) missingFields.push('publication');
-    if (!contentType) missingFields.push('contentType');
-    if (!keyword) missingFields.push('keyword');
-    if (!companyName) missingFields.push('companyName');
-    if (!email) missingFields.push('email');
-    if (!phone) missingFields.push('phone');
-    if (!sourceMaterial) missingFields.push('sourceMaterial');
-
-    if (missingFields.length > 0) {
+    if (!keyword || !wordCount || !publication) {
       return res.status(400).json({
         error: 'Missing required fields',
-        missingFields: missingFields,
-        success: false
+        details: 'Publication, keyword, and word count are required',
+        success: false,
+        timestamp: new Date().toISOString()
       });
     }
 
-    // Check for Anthropic API key
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return res.status(500).json({
-        error: 'Server configuration error',
-        details: 'Anthropic API key not configured',
-        success: false
-      });
-    }
-
-    console.log('Attempting to import Anthropic...');
+    // Multi-generation approach for 8000+ words
+    const targetWordCount = parseInt(wordCount) || 8000;
+    const affiliateLinks = affiliateLink ? [affiliateLink] : [];
     
-    // Dynamic import to catch import errors
-    let Anthropic;
-    try {
-      const anthropicModule = await import('@anthropic-ai/sdk');
-      Anthropic = anthropicModule.default;
-      console.log('Anthropic imported successfully');
-    } catch (importError) {
-      console.error('Failed to import Anthropic:', importError);
-      return res.status(500).json({
-        error: 'Failed to load AI service',
-        details: importError.message,
-        success: false
-      });
-    }
-
-    console.log('Creating Anthropic client...');
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-
-    console.log('Generating content...');
-
-    // Enhanced prompt with all requirements
-    const prompt = `
-CRITICAL SYSTEM CONSTRAINTS - BINDING REQUIREMENTS:
-
-1. WORD COUNT REQUIREMENT: Generate EXACTLY ${wordCountTarget} words or more. This is MANDATORY and will be validated. Aim for 8000-12000 words for comprehensive coverage.
-
-2. AFFILIATE LINK REQUIREMENT: You MUST integrate this affiliate link "${req.body.affiliateLink || ''}" exactly 4-5 times throughout the content in natural, contextually relevant ways. Examples:
-   - "You can learn more about this product at [AFFILIATE LINK]"
-   - "For additional information and to explore options, visit [AFFILIATE LINK]"
-   - "To discover more about these benefits, check out [AFFILIATE LINK]"
-
-3. STRUCTURE REQUIREMENT: Include at least 8-10 H2 sections with descriptive headlines for comprehensive coverage.
-
-4. CONTACT INTEGRATION: Include company contact information naturally: ${companyName}, ${email}, ${phone}
-
-5. FACTUAL ACCURACY MANDATE: Base ALL product/service information EXCLUSIVELY on the source material below. Never invent details.
-
-MANDATORY SOURCE MATERIAL FOR FACTUAL ACCURACY:
-${sourceMaterial}
-
-PUBLICATION TARGET: ${publication}
-CONTENT TYPE: ${contentType}  
-PRIMARY KEYWORD: ${keyword}
-
-GENERATION INSTRUCTIONS:
-- Write comprehensive, detailed content covering the topic thoroughly
-- Each H2 section should be 800-1200 words minimum to reach the ${wordCountTarget} word target
-- Use ONLY factual information from the source material provided
-- Never invent, assume, or add details not explicitly stated
-- Include specific examples, detailed explanations, and comprehensive analysis
-- Naturally integrate the affiliate link ${req.body.affiliateLink ? '4-5 times with proper context' : '(no affiliate link provided)'}
-- Use professional, authoritative tone appropriate for ${publication}
-- Ensure content is valuable, informative, and engaging
-- Continue writing until you reach the full ${wordCountTarget} word count
-- End with a strong conclusion that summarizes key points
-
-CRITICAL: Generate the COMPLETE content without cutting off. Reach the full word count target of ${wordCountTarget} words.
-
-Begin comprehensive generation now:
-`;
-
-    console.log('Calling Anthropic API...');
+    // Calculate generation rounds
+    const wordsPerRound = 3500;
+    const totalRounds = Math.ceil(targetWordCount / wordsPerRound);
     
-// Iterative generation function for long content
-const generateLongContent = async (anthropic, data, targetWords) => {
-  let fullContent = '';
-  let currentWordCount = 0;
-  let attempt = 1;
-  const maxAttempts = 3;
+    console.log(`Starting multi-generation approach: ${totalRounds} rounds for ${targetWordCount} words`);
 
-  while (currentWordCount < targetWords * 0.9 && attempt <= maxAttempts) {
-    console.log(`Generation attempt ${attempt}, current words: ${currentWordCount}, target: ${targetWords}`);
+    // Initialize content accumulator
+    let accumulatedContent = '';
+    let currentWordCount = 0;
 
-    const isFirstGeneration = attempt === 1;
-    const remainingWords = targetWords - currentWordCount;
-    const targetForThisRound = Math.min(remainingWords, 3500); // Safe chunk size for Haiku
-
-    const prompt = `
-${isFirstGeneration ? 'CRITICAL SYSTEM CONSTRAINTS - BINDING REQUIREMENTS:' : 'CONTINUATION REQUIREMENTS:'}
-
-1. WORD COUNT FOR THIS SECTION: Generate approximately ${targetForThisRound} words ${isFirstGeneration ? 'to start' : 'to continue'} the content.
-2. ${isFirstGeneration ? `AFFILIATE LINK REQUIREMENT: Integrate "${data.affiliateLink || ''}" naturally 1-2 times in this section.` : 'Continue the professional tone and include 1 affiliate link if natural.'}
-3. FACTUAL ACCURACY: Base ALL information on the source material provided.
-4. ${isFirstGeneration ? 'START' : 'CONTINUE'} with comprehensive coverage of the topic.
-
-${isFirstGeneration ? `
-MANDATORY SOURCE MATERIAL:
-${data.sourceMaterial}
-
-PUBLICATION: ${data.publication}
-CONTENT TYPE: ${data.contentType}
-KEYWORD: ${data.keyword}
-COMPANY: ${data.companyName}, ${data.email}, ${data.phone}
-` : `
-CONTEXT: This is a continuation of content about ${data.keyword}. Continue the professional analysis and coverage.
-Previous content ended with: "${fullContent.slice(-200)}"
-`}
-
-${isFirstGeneration ? 'BEGIN' : 'CONTINUE'} comprehensive content generation:
-`;
-
-    try {
-      const message = await anthropic.messages.create({
-        model: 'claude-3-haiku-20240307', // Back to working Haiku model
-        max_tokens: 4000, // Max for Haiku
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
-      });
-
-      const newContent = message.content[0].text;
-      const newWordCount = newContent.split(/\s+/).filter(word => word.length > 0).length;
+    // Generation rounds
+    for (let round = 1; round <= totalRounds; round++) {
+      console.log(`Starting generation round ${round}/${totalRounds}`);
       
-      console.log(`Attempt ${attempt} generated ${newWordCount} words`);
-
-      // Add content with proper spacing
-      if (fullContent && !fullContent.endsWith('\n\n')) {
-        fullContent += '\n\n';
-      }
-      fullContent += newContent;
-      currentWordCount += newWordCount;
-
-      attempt++;
-    } catch (error) {
-      console.error(`Generation attempt ${attempt} failed:`, error);
-      if (attempt === maxAttempts) {
-        throw error;
-      }
-      attempt++;
-    }
-  }
-
-  return {
-    content: fullContent,
-    wordCount: currentWordCount,
-    attempts: attempt - 1,
-    targetMet: currentWordCount >= targetWords * 0.9
-  };
-};
-
-    // Process affiliate link integration if provided
-    let finalContent = content;
-    let affiliateLinkCount = 0;
-    
-    if (req.body.affiliateLink) {
-      // Count existing affiliate links
-      const linkMatches = content.match(/<a[^>]*href="[^"]*"[^>]*>/gi) || [];
-      affiliateLinkCount = linkMatches.filter(link => 
-        link.includes(req.body.affiliateLink) || 
-        link.includes('affiliate') || 
-        link.includes('partner')
-      ).length;
+      // Calculate words needed for this round
+      const remainingWords = targetWordCount - currentWordCount;
+      const roundWordTarget = Math.min(wordsPerRound, remainingWords);
       
-      console.log(`Affiliate links found: ${affiliateLinkCount}`);
+      // Build round-specific prompt
+      const roundPrompt = buildRoundPrompt({
+        round,
+        totalRounds,
+        roundWordTarget,
+        keyword,
+        publication,
+        sourceMaterial,
+        sourceUrl,
+        affiliateLinks,
+        company,
+        email,
+        phone,
+        previousContent: accumulatedContent
+      });
+
+      // Generate content for this round
+      const roundResult = await generateRoundContent(roundPrompt);
+      
+      if (!roundResult.success) {
+        console.error(`Round ${round} failed:`, roundResult.error);
+        return res.status(500).json({
+          error: 'Content generation failed',
+          details: `Round ${round} generation error: ${roundResult.error}`,
+          errorType: 'GenerationError',
+          success: false,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // Accumulate content
+      accumulatedContent += (round === 1 ? '' : '\n\n') + roundResult.content;
+      currentWordCount += estimateWordCount(roundResult.content);
+      
+      console.log(`Round ${round} complete. Current word count: ~${currentWordCount}`);
     }
 
-    // Return comprehensive success response
-    const response = {
-      success: true,
-      content: finalContent,
-      metrics: {
-        wordCount: wordCount,
-        wordCountTarget: wordCountTarget,
-        wordCountAccuracy: Math.round((wordCount / wordCountTarget) * 100),
-        h2Count: h2Count,
-        affiliateLinkCount: affiliateLinkCount,
-        generationAttempts: 1,
-        requirementsMet: {
-          wordCount: wordCount >= wordCountTarget * 0.9, // 90% tolerance
-          structure: h2Count >= 5,
-          affiliateLinks: affiliateLinkCount >= 0 // Will enhance later
-        }
-      },
-      validation: {
-        wordCount: wordCount,
-        h2Count: h2Count,
-        affiliateLinkCount: affiliateLinkCount,
-        meetsWordTarget: wordCount >= wordCountTarget * 0.9,
-        meetsStructureTarget: h2Count >= 5,
-        meetsAffiliateTarget: affiliateLinkCount >= 0
-      },
-      message: wordCount >= wordCountTarget * 0.9 ? 
-        'Content generated successfully - all requirements met' : 
-        `Content generated with ${wordCount} words (${Math.round((wordCount / wordCountTarget) * 100)}% of target)`,
-      timestamp: new Date().toISOString()
+    // Final content assembly
+    const finalArticle = {
+      content: accumulatedContent,
+      wordCount: currentWordCount,
+      publication: publication,
+      keyword: keyword,
+      affiliateLinks: affiliateLinks,
+      metadata: {
+        company: company || '',
+        email: email || '',
+        phone: phone || '',
+        sourceUrl: sourceUrl || '',
+        generatedAt: new Date().toISOString(),
+        rounds: totalRounds,
+        targetWords: targetWordCount,
+        actualWords: currentWordCount
+      }
     };
 
-    console.log('Sending success response with metrics:', {
-      wordCount,
-      h2Count,
-      affiliateLinkCount,
-      accuracy: response.metrics.wordCountAccuracy
+    console.log(`Content generation complete: ${currentWordCount} words in ${totalRounds} rounds`);
+
+    // Return successful response
+    return res.status(200).json({
+      success: true,
+      article: finalArticle,
+      message: `Successfully generated ${currentWordCount} words`,
+      timestamp: new Date().toISOString()
     });
 
-    return res.status(200).json(response);
-
   } catch (error) {
-    console.error('=== CAUGHT ERROR ===');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-
-    // Always return JSON
+    console.error('API Error:', error);
+    
     return res.status(500).json({
-      error: 'Content generation failed',
+      error: 'Internal server error',
       details: error.message,
-      errorType: error.name,
+      errorType: error.name || 'UnknownError',
       success: false,
       timestamp: new Date().toISOString()
     });
   }
+}
+
+// Build round-specific prompt
+function buildRoundPrompt({
+  round,
+  totalRounds,
+  roundWordTarget,
+  keyword,
+  publication,
+  sourceMaterial,
+  sourceUrl,
+  affiliateLinks,
+  company,
+  email,
+  phone,
+  previousContent
+}) {
+  
+  const isFirstRound = round === 1;
+  const isLastRound = round === totalRounds;
+  const isMiddleRound = !isFirstRound && !isLastRound;
+
+  let prompt = '';
+
+  if (isFirstRound) {
+    prompt = `Write the INTRODUCTION and BEGINNING sections of a comprehensive ${roundWordTarget}-word article for ${publication}.
+
+PRIMARY KEYWORD: ${keyword}
+
+MANDATORY SOURCE MATERIAL (ZERO FAILURE POLICY):
+${sourceMaterial}
+
+REQUIREMENTS:
+- Write EXACTLY ${roundWordTarget} words for this section
+- Create compelling introduction with keyword optimization
+- Use ONLY information from the provided source material
+- Include 1-2 natural affiliate link placements: ${affiliateLinks.join(', ')}
+- Professional tone suitable for ${publication}
+- Start with engaging headline and introduction
+- Create H2 sections for main points
+
+CONTACT INFO TO INCLUDE:
+Company: ${company}
+Email: ${email}  
+Phone: ${phone}
+
+This is PART 1 of ${totalRounds}. Focus on introduction and early content sections.`;
+
+  } else if (isLastRound) {
+    prompt = `Write the CONCLUSION and FINAL sections of a comprehensive article, completing the content started below.
+
+PREVIOUS CONTENT:
+${previousContent.substring(0, 1000)}...
+
+PRIMARY KEYWORD: ${keyword}
+
+MANDATORY SOURCE MATERIAL (ZERO FAILURE POLICY):
+${sourceMaterial}
+
+REQUIREMENTS:
+- Write EXACTLY ${roundWordTarget} words for this conclusion section
+- Create strong, actionable conclusion
+- Include final 1-2 affiliate link placements: ${affiliateLinks.join(', ')}
+- Summarize key points from source material
+- End with compelling call-to-action
+- Maintain consistency with previous content
+
+This is the FINAL PART (${round}/${totalRounds}). Bring the article to a powerful conclusion.`;
+
+  } else {
+    prompt = `Continue writing the MIDDLE section of a comprehensive article, building on the content started below.
+
+PREVIOUS CONTENT:
+${previousContent.substring(0, 1000)}...
+
+PRIMARY KEYWORD: ${keyword}
+
+MANDATORY SOURCE MATERIAL (ZERO FAILURE POLICY):
+${sourceMaterial}
+
+REQUIREMENTS:
+- Write EXACTLY ${roundWordTarget} words for this middle section
+- Continue seamlessly from previous content
+- Develop main points from source material
+- Include 1 natural affiliate link placement: ${affiliateLinks.join(', ')}
+- Create detailed H2 sections
+- Maintain professional flow and consistency
+
+This is PART ${round} of ${totalRounds}. Focus on detailed development of main content.`;
+  }
+
+  return prompt;
+}
+
+// Generate content for a single round
+async function generateRoundContent(prompt) {
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 4096,
+      messages: [{
+        role: 'user',
+        content: prompt
+      }]
+    });
+
+    // Extract content from response
+    const generatedContent = response.content[0]?.text;
+    
+    if (!generatedContent) {
+      return {
+        success: false,
+        error: 'No content generated from Claude API'
+      };
+    }
+
+    return {
+      success: true,
+      content: generatedContent
+    };
+
+  } catch (apiError) {
+    console.error('Claude API Error:', apiError);
+    return {
+      success: false,
+      error: apiError.message || 'Claude API call failed'
+    };
+  }
+}
+
+// Estimate word count
+function estimateWordCount(text) {
+  return text.trim().split(/\s+/).length;
 }
