@@ -1,9 +1,31 @@
 // /api/generate-content.js - RECONSTRUCTED FOR WORD COUNT ENFORCEMENT
 import Anthropic from '@anthropic-ai/sdk';
 
+// Validate API key at startup
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error('CRITICAL: ANTHROPIC_API_KEY is missing from environment variables');
+}
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
+
+// Test function to verify API connectivity
+const testAnthropicConnection = async () => {
+  try {
+    console.log('Testing Anthropic API connection...');
+    const testMessage = await anthropic.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 10,
+      messages: [{ role: 'user', content: 'Hi' }]
+    });
+    console.log('Anthropic API connection successful');
+    return true;
+  } catch (error) {
+    console.error('Anthropic API connection failed:', error.message);
+    return false;
+  }
+};
 
 // Content validation utilities
 const validateContent = (content, requirements) => {
@@ -213,6 +235,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Add debugging for incoming requests
+  console.log('=== INCOMING REQUEST ===');
+  console.log('Method:', req.method);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
+  console.log('Body preview:', JSON.stringify(req.body, null, 2).substring(0, 500));
+
+  // Validate API key before proceeding
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error('ANTHROPIC_API_KEY missing');
+    return res.status(500).json({
+      error: 'Server configuration error',
+      details: 'API key not configured',
+      success: false
+    });
+  }
+
   try {
     const {
       publication,
@@ -298,17 +336,23 @@ export default async function handler(req, res) {
     res.status(200).json(response);
 
   } catch (error) {
-    console.error('Content generation error:', error);
+    console.error('=== ERROR CAUGHT ===');
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
-    // Enhanced error handling for better debugging
+    // Ensure we always return valid JSON
     const errorResponse = {
       error: 'Content generation failed',
       details: error.message,
       success: false,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     };
 
-    // Return proper JSON response even for errors
+    console.log('Sending error response:', JSON.stringify(errorResponse, null, 2));
+
+    // Set proper JSON content type
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json(errorResponse);
   }
 }
