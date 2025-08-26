@@ -50,7 +50,9 @@ const generateConstrainedPrompt = (data, attempt = 1) => {
     keyword,
     companyName,
     email,
-    phone
+    phone,
+    sourceUrl,
+    sourceMaterial
   } = data;
 
   const basePrompt = `
@@ -60,6 +62,12 @@ CRITICAL SYSTEM CONSTRAINTS - THESE ARE BINDING REQUIREMENTS, NOT SUGGESTIONS:
 2. AFFILIATE INTEGRATION REQUIREMENT: You MUST naturally integrate the affiliate link "${affiliateLink}" exactly 3-5 times throughout the content.
 3. STRUCTURE REQUIREMENT: You MUST include at least 6 H2 sections with descriptive headlines.
 4. CONTACT INTEGRATION: Include company contact information naturally: ${companyName}, ${email}, ${phone}
+5. FACTUAL ACCURACY MANDATE: You MUST base all product/service information EXCLUSIVELY on the provided source material below. Do NOT add, invent, or assume any product details not explicitly stated.
+
+MANDATORY SOURCE MATERIAL FOR FACTUAL ACCURACY:
+${sourceMaterial}
+
+${sourceUrl ? `SOURCE URL REFERENCE: ${sourceUrl}` : ''}
 
 MULTI-AGENT ANALYSIS TO IMPLEMENT:
 ${multiAgentAnalysis}
@@ -77,12 +85,14 @@ Focus on expanding each section with detailed information, examples, and compreh
 GENERATION INSTRUCTIONS:
 - Write comprehensive, detailed content that thoroughly covers the topic
 - Each H2 section should be 800-1200 words minimum
-- Include specific examples, case studies, and detailed explanations
-- Naturally weave in the affiliate link ${affiliateLinkCount} times with contextual relevance
+- Use ONLY the factual information provided in the source material above
+- Never invent, assume, or add product details not explicitly stated
+- Include specific examples and detailed explanations based on source material
+- Naturally weave in the affiliate link 3-5 times with contextual relevance
 - Use professional, authoritative tone appropriate for ${publication}
 - Ensure content is valuable, informative, and engaging
 
-CRITICAL: Your response will be validated for word count, structure, and affiliate integration. 
+CRITICAL: Your response will be validated for word count, structure, affiliate integration, and factual accuracy. 
 Failure to meet these requirements will result in regeneration requests.
 
 Begin generation now:`;
@@ -213,14 +223,17 @@ export default async function handler(req, res) {
       phone,
       affiliateLink,
       multiAgentAnalysis,
-      wordCountTarget = 8000 // Default to 8000 if not provided
+      wordCountTarget = 8000, // Default to 8000 if not provided
+      sourceUrl,
+      sourceMaterial
     } = req.body;
 
-    // Validation of required fields
-    if (!publication || !contentType || !keyword || !companyName || !email || !phone) {
+    // Validation of required fields (now includes sourceMaterial)
+    if (!publication || !contentType || !keyword || !companyName || !email || !phone || !sourceMaterial) {
       return res.status(400).json({ 
         error: 'Missing required fields',
-        required: ['publication', 'contentType', 'keyword', 'companyName', 'email', 'phone']
+        required: ['publication', 'contentType', 'keyword', 'companyName', 'email', 'phone', 'sourceMaterial'],
+        message: 'Source Material is now mandatory to ensure 100% factual accuracy'
       });
     }
 
@@ -229,7 +242,8 @@ export default async function handler(req, res) {
       publication,
       contentType,
       keyword,
-      affiliateLink: affiliateLink ? 'provided' : 'missing'
+      affiliateLink: affiliateLink ? 'provided' : 'missing',
+      sourceMaterial: sourceMaterial ? `${sourceMaterial.length} characters provided` : 'missing'
     });
 
     // Generate content with validation loops
@@ -242,7 +256,9 @@ export default async function handler(req, res) {
       phone,
       affiliateLink,
       multiAgentAnalysis,
-      wordCountTarget
+      wordCountTarget,
+      sourceUrl,
+      sourceMaterial
     });
 
     // Enhance affiliate integration if needed
@@ -284,10 +300,15 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Content generation error:', error);
     
-    res.status(500).json({
+    // Enhanced error handling for better debugging
+    const errorResponse = {
       error: 'Content generation failed',
       details: error.message,
-      success: false
-    });
+      success: false,
+      timestamp: new Date().toISOString()
+    };
+
+    // Return proper JSON response even for errors
+    res.status(500).json(errorResponse);
   }
 }
