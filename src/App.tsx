@@ -1,1079 +1,842 @@
-// FIXED App.tsx - STANDALONE CSS (NO TAILWIND DEPENDENCY)
-import React, { useState } from 'react';
-import { Download, Settings, BarChart3, Users, FileText, Globe, Brain, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Brain, Zap, Target, Download, Settings, CheckCircle, AlertCircle, Loader2, TrendingUp, Award, Eye, RefreshCw } from 'lucide-react';
 
-interface FormData {
-  publication: string;
-  contentType: string;
-  keyword: string;
-  wordCountTarget: number;
-  affiliateLink: string;
-  sourceUrl: string;
-  sourceMaterial: string;
-  companyName: string;
-  email: string;
-  phone: string;
-}
-
-interface GenerationResult {
-  content: string;
-  metrics: {
-    wordCount: number;
-    wordCountTarget: number;
-    wordCountAccuracy: number;
-    h2Count: number;
-    affiliateLinkCount: number;
-    generationAttempts: number;
-    requirementsMet: {
-      wordCount: boolean;
-      structure: boolean;
-      affiliateLinks: boolean;
-    };
-  };
-  validation: any;
-  success: boolean;
-  message: string;
-}
-
-const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'generator' | 'admin' | 'analytics'>('generator');
-  const [formData, setFormData] = useState<FormData>({
+export default function AutonomousQualityIntelligenceSystem() {
+  const [formData, setFormData] = useState({
     publication: '',
-    contentType: '',
     keyword: '',
-    wordCountTarget: 8000,
+    wordCount: '8000',
     affiliateLink: '',
     sourceUrl: '',
     sourceMaterial: '',
-    companyName: '',
+    company: '',
     email: '',
     phone: ''
   });
 
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [result, setResult] = useState<GenerationResult | null>(null);
-  const [multiAgentAnalysis, setMultiAgentAnalysis] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [qualityMetrics, setQualityMetrics] = useState(null);
+  const [aiRecommendations, setAiRecommendations] = useState([]);
+  const [processingStage, setProcessingStage] = useState('');
+  const [autonomousOptimizations, setAutonomousOptimizations] = useState([]);
+  const [realTimeAnalysis, setRealTimeAnalysis] = useState({});
 
-  // Inline Styles (No Tailwind dependency)
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%)',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
-    },
-    innerContainer: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '2rem 1rem'
-    },
-    header: {
-      textAlign: 'center' as const,
-      marginBottom: '3rem'
-    },
-    headerTitle: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: '1rem'
-    },
-    title: {
-      fontSize: '2.5rem',
-      fontWeight: 'bold',
-      color: 'white',
-      marginLeft: '1rem'
-    },
-    subtitle: {
-      fontSize: '1.25rem',
-      color: '#93c5fd'
-    },
-    nav: {
-      display: 'flex',
-      justifyContent: 'center',
-      marginBottom: '2rem'
-    },
-    navContainer: {
-      background: 'rgba(255, 255, 255, 0.1)',
-      backdropFilter: 'blur(10px)',
-      borderRadius: '0.75rem',
-      padding: '0.5rem'
-    },
-    navButton: (active: boolean) => ({
-      padding: '0.75rem 1.5rem',
-      borderRadius: '0.5rem',
-      fontWeight: '500',
-      transition: 'all 0.3s ease',
-      background: active ? '#3b82f6' : 'transparent',
-      color: active ? 'white' : '#93c5fd',
-      border: 'none',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center'
-    }),
-    gridContainer: {
-      display: 'grid',
-      gridTemplateColumns: '1fr',
-      gap: '2rem'
-    },
-    '@media (min-width: 1024px)': {
-      gridContainer: {
-        gridTemplateColumns: '1fr 1fr'
-      }
-    },
-    card: {
-      background: 'rgba(255, 255, 255, 0.1)',
-      backdropFilter: 'blur(10px)',
-      borderRadius: '1rem',
-      padding: '2rem',
-      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-    },
-    cardTitle: {
-      fontSize: '1.5rem',
-      fontWeight: 'bold',
-      color: 'white',
-      marginBottom: '1.5rem'
-    },
-    form: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: '1.5rem'
-    },
-    section: {
-      borderRadius: '0.75rem',
-      padding: '1.5rem'
-    },
-    sectionBlue: {
-      background: 'rgba(59, 130, 246, 0.2)'
-    },
-    sectionPurple: {
-      background: 'rgba(139, 92, 246, 0.2)'
-    },
-    sectionGreen: {
-      background: 'rgba(34, 197, 94, 0.2)'
-    },
-    sectionTitle: {
-      fontSize: '1.125rem',
-      fontWeight: '600',
-      marginBottom: '1rem',
-      display: 'flex',
-      alignItems: 'center'
-    },
-    sectionTitleBlue: {
-      color: '#93c5fd'
-    },
-    sectionTitlePurple: {
-      color: '#c4b5fd'
-    },
-    sectionTitleGreen: {
-      color: '#86efac'
-    },
-    inputGrid: {
-      display: 'grid',
-      gridTemplateColumns: '1fr',
-      gap: '1rem'
-    },
-    inputGrid2: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '1rem'
-    },
-    inputGrid3: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '1rem'
-    },
-    '@media (max-width: 768px)': {
-      inputGrid2: {
-        gridTemplateColumns: '1fr'
-      },
-      inputGrid3: {
-        gridTemplateColumns: '1fr'
-      }
-    },
-    label: {
-      display: 'block',
-      fontSize: '0.875rem',
-      fontWeight: '500',
-      marginBottom: '0.5rem'
-    },
-    labelBlue: {
-      color: '#93c5fd'
-    },
-    labelPurple: {
-      color: '#c4b5fd'
-    },
-    labelGreen: {
-      color: '#86efac'
-    },
-    input: {
-      width: '100%',
-      padding: '0.75rem 1rem',
-      background: 'rgba(255, 255, 255, 0.2)',
-      border: '1px solid rgba(255, 255, 255, 0.3)',
-      borderRadius: '0.5rem',
-      color: 'white',
-      fontSize: '1rem'
-    },
-    textarea: {
-      width: '100%',
-      padding: '0.75rem 1rem',
-      background: 'rgba(255, 255, 255, 0.2)',
-      border: '1px solid rgba(255, 255, 255, 0.3)',
-      borderRadius: '0.5rem',
-      color: 'white',
-      fontSize: '1rem',
-      height: '6rem',
-      resize: 'none' as const
-    },
-    select: {
-      width: '100%',
-      padding: '0.75rem 1rem',
-      background: 'rgba(255, 255, 255, 0.2)',
-      border: '1px solid rgba(255, 255, 255, 0.3)',
-      borderRadius: '0.5rem',
-      color: 'white',
-      fontSize: '1rem'
-    },
-    submitButton: {
-      width: '100%',
-      background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
-      color: 'white',
-      fontWeight: 'bold',
-      padding: '1rem 2rem',
-      borderRadius: '0.75rem',
-      border: 'none',
-      cursor: 'pointer',
-      fontSize: '1rem',
-      transition: 'all 0.3s ease'
-    },
-    submitButtonDisabled: {
-      opacity: 0.5,
-      cursor: 'not-allowed'
-    },
-    successBox: {
-      background: 'rgba(34, 197, 94, 0.2)',
-      borderRadius: '0.5rem',
-      padding: '0.75rem',
-      marginTop: '1rem'
-    },
-    successText: {
-      color: '#86efac',
-      fontSize: '0.875rem',
-      display: 'flex',
-      alignItems: 'center'
-    },
-    metricsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '1rem',
-      marginBottom: '1.5rem'
-    },
-    '@media (min-width: 768px)': {
-      metricsGrid: {
-        gridTemplateColumns: 'repeat(4, 1fr)'
-      }
-    },
-    metricCard: {
-      borderRadius: '0.5rem',
-      padding: '1rem',
-      textAlign: 'center' as const
-    },
-    metricCardBlue: {
-      background: 'rgba(59, 130, 246, 0.2)'
-    },
-    metricCardPurple: {
-      background: 'rgba(139, 92, 246, 0.2)'
-    },
-    metricCardGreen: {
-      background: 'rgba(34, 197, 94, 0.2)'
-    },
-    metricCardOrange: {
-      background: 'rgba(249, 115, 22, 0.2)'
-    },
-    metricValue: {
-      fontSize: '1.5rem',
-      fontWeight: 'bold',
-      color: 'white'
-    },
-    metricLabel: {
-      fontSize: '0.875rem',
-      marginTop: '0.25rem'
-    },
-    metricStatus: {
-      fontSize: '0.75rem',
-      fontWeight: '500',
-      marginTop: '0.25rem'
-    },
-    downloadGrid: {
-      display: 'grid',
-      gridTemplateColumns: '1fr',
-      gap: '1rem'
-    },
-    '@media (min-width: 768px)': {
-      downloadGrid: {
-        gridTemplateColumns: 'repeat(3, 1fr)'
-      }
-    },
-    downloadButton: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '0.75rem 1rem',
-      borderRadius: '0.5rem',
-      border: 'none',
-      cursor: 'pointer',
-      color: 'white',
-      fontWeight: '500',
-      transition: 'all 0.3s ease'
-    },
-    downloadButtonBlue: {
-      background: '#3b82f6'
-    },
-    downloadButtonPurple: {
-      background: '#8b5cf6'
-    },
-    downloadButtonGreen: {
-      background: '#10b981'
-    },
-    loading: {
-      textAlign: 'center' as const,
-      padding: '3rem 0'
-    },
-    spinner: {
-      width: '4rem',
-      height: '4rem',
-      border: '2px solid rgba(59, 130, 246, 0.2)',
-      borderTop: '2px solid #3b82f6',
-      borderRadius: '50%',
-      animation: 'spin 1s linear infinite',
-      margin: '0 auto 1rem'
-    },
-    loadingText: {
-      color: '#93c5fd'
+  // 🧠 AUTONOMOUS REAL-TIME INPUT ANALYSIS
+  const performRealTimeAnalysis = useCallback(async (currentFormData) => {
+    if (!currentFormData.keyword || currentFormData.keyword.length < 2) {
+      setRealTimeAnalysis({});
+      return;
     }
-  };
-
-  // Content type auto-selection based on publication
-  const getContentTypeForPublication = (publication: string): string => {
-    const contentTypeMap: { [key: string]: string } = {
-      'Globe Newswire': 'Press Release',
-      'Newswire': 'News Article',
-      'Our Sites': 'Blog Post'
-    };
-    return contentTypeMap[publication] || '';
-  };
-
-  const handlePublicationChange = (publication: string) => {
-    setFormData(prev => ({
-      ...prev,
-      publication,
-      contentType: getContentTypeForPublication(publication)
-    }));
-  };
-
-  // Multi-agent analysis simulation
-  const generateMultiAgentAnalysis = (data: FormData) => {
-    const analysis = {
-      seoStrategyAgent: {
-        score: Math.floor(Math.random() * 15) + 85,
-        recommendations: `Target word count: ${data.wordCountTarget} words. Primary keyword: "${data.keyword}". Competition analysis needed for ${data.publication} platform.`,
-        wordCountStrategy: `Generate ${data.wordCountTarget}+ words with keyword density optimization.`
-      },
-      contentResearchAgent: {
-        score: Math.floor(Math.random() * 20) + 75,
-        recommendations: data.sourceUrl 
-          ? `Source material provided: ${data.sourceUrl}. Additional research recommended for comprehensive coverage.`
-          : `Comprehensive research needed for "${data.keyword}" topic authority.`,
-        sourceMaterial: data.sourceMaterial || 'No additional source material provided.'
-      },
-      complianceAgent: {
-        score: Math.floor(Math.random() * 10) + 90,
-        recommendations: `Content optimized for ${data.publication} compliance. Affiliate link integration: ${data.affiliateLink ? 'Provided' : 'Missing'}.`,
-        platform: data.publication
-      },
-      qualityControlAgent: {
-        score: Math.floor(Math.random() * 15) + 80,
-        recommendations: `Target structure: ${Math.ceil(data.wordCountTarget / 1200)} H2 sections minimum. Professional tone for ${data.companyName}.`,
-        contactIntegration: `${data.companyName}, ${data.email}, ${data.phone}`
-      },
-      llmOptimizationAgent: {
-        score: Math.floor(Math.random() * 10) + 88,
-        recommendations: `Claude Haiku optimized for ${data.wordCountTarget}+ word generation. Enhanced prompting with source context.`,
-        modelStrategy: 'Claude 3 Haiku with iterative generation'
-      }
-    };
-
-    const overallScore = Math.round(
-      (analysis.seoStrategyAgent.score + 
-       analysis.contentResearchAgent.score + 
-       analysis.complianceAgent.score + 
-       analysis.qualityControlAgent.score + 
-       analysis.llmOptimizationAgent.score) / 5
-    );
-
-    return { ...analysis, overallScore };
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsGenerating(true);
-    setResult(null);
 
     try {
-      // Generate multi-agent analysis
-      const analysis = generateMultiAgentAnalysis(formData);
-      setMultiAgentAnalysis(analysis);
-
-      // Prepare enhanced prompt for backend
-      const enhancedPrompt = `
-MULTI-AGENT SYSTEM ANALYSIS:
-
-SEO STRATEGY AGENT (${analysis.seoStrategyAgent.score}/100):
-${analysis.seoStrategyAgent.recommendations}
-Word Count Strategy: ${analysis.seoStrategyAgent.wordCountStrategy}
-
-CONTENT RESEARCH AGENT (${analysis.contentResearchAgent.score}/100):
-${analysis.contentResearchAgent.recommendations}
-Source Material Context: ${analysis.contentResearchAgent.sourceMaterial}
-
-COMPLIANCE AGENT (${analysis.complianceAgent.score}/100):
-${analysis.complianceAgent.recommendations}
-Platform: ${analysis.complianceAgent.platform}
-
-QUALITY CONTROL AGENT (${analysis.qualityControlAgent.score}/100):
-${analysis.qualityControlAgent.recommendations}
-Contact Integration: ${analysis.qualityControlAgent.contactIntegration}
-
-LLM OPTIMIZATION AGENT (${analysis.llmOptimizationAgent.score}/100):
-${analysis.llmOptimizationAgent.recommendations}
-Model Strategy: ${analysis.llmOptimizationAgent.modelStrategy}
-
-OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
-      `;
-
-      const requestData = {
-        publication: formData.publication,
-        contentType: formData.contentType,
-        keyword: formData.keyword,
-        wordCountTarget: formData.wordCountTarget,
-        affiliateLink: formData.affiliateLink,
-        sourceUrl: formData.sourceUrl,
-        sourceMaterial: formData.sourceMaterial,
-        companyName: formData.companyName,
-        email: formData.email,
-        phone: formData.phone,
-        multiAgentAnalysis: enhancedPrompt
+      // Simulate AI analysis of input quality
+      const analysis = {
+        keywordStrength: calculateKeywordStrength(currentFormData.keyword),
+        publicationAlignment: calculatePublicationAlignment(currentFormData.publication, currentFormData.keyword),
+        wordCountOptimization: calculateWordCountOptimization(currentFormData.wordCount, currentFormData.keyword),
+        sourceQuality: calculateSourceQuality(currentFormData.sourceMaterial),
+        overallInputScore: 0
       };
 
-      console.log('Sending request with data:', {
-        ...requestData,
-        sourceMaterial: `${requestData.sourceMaterial.length} characters`,
-        multiAgentAnalysis: `${requestData.multiAgentAnalysis.length} characters`
-      });
+      analysis.overallInputScore = Math.round(
+        (analysis.keywordStrength + analysis.publicationAlignment + analysis.wordCountOptimization + analysis.sourceQuality) / 4
+      );
+
+      setRealTimeAnalysis(analysis);
+
+      // Generate AI recommendations based on analysis
+      const recommendations = generateAIRecommendations(analysis, currentFormData);
+      setAiRecommendations(recommendations);
+
+    } catch (error) {
+      console.error('Real-time analysis error:', error);
+    }
+  }, []);
+
+  // Trigger real-time analysis on form changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      performRealTimeAnalysis(formData);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData, performRealTimeAnalysis]);
+
+  // 🚀 AUTONOMOUS QUALITY ORCHESTRATION SUBMISSION
+  const handleAutonomousGeneration = async () => {
+    setIsLoading(true);
+    setError('');
+    setGeneratedContent('');
+    setQualityMetrics(null);
+    setAutonomousOptimizations([]);
+
+    try {
+      console.log('🧠 INITIATING AUTONOMOUS QUALITY ORCHESTRATION...');
+      
+      // Apply enterprise field mapping with AI enhancements
+      const aiEnhancedPayload = {
+        publication: formData.publication?.trim() || 'Default Publication',
+        keyword: formData.keyword?.trim(),
+        wordCount: parseInt(formData.wordCount) || 8000,
+        affiliateLink: formData.affiliateLink?.trim() || '',
+        sourceUrl: formData.sourceUrl?.trim() || '',
+        sourceMaterial: formData.sourceMaterial?.trim() || '',
+        company: formData.company?.trim() || '',
+        email: formData.email?.trim() || '',
+        phone: formData.phone?.trim() || '',
+        // AI Enhancement Flags
+        enableAutonomousOptimization: true,
+        qualityTargetScore: 95,
+        realTimeAnalysis: realTimeAnalysis
+      };
+
+      console.log('📤 Sending AI-Enhanced Request:', aiEnhancedPayload);
+
+      // Stage 1: Input Optimization
+      setProcessingStage('🧠 AI analyzing and optimizing your input...');
+      
+      // Stage 2: Multi-Round Generation
+      setTimeout(() => setProcessingStage('🚀 Multi-round content generation with quality loops...'), 3000);
+      
+      // Stage 3: Output Perfection  
+      setTimeout(() => setProcessingStage('🎯 Autonomous output perfection in progress...'), 8000);
+      
+      // Stage 4: Quality Analysis
+      setTimeout(() => setProcessingStage('📊 Final quality metrics and recommendations...'), 12000);
 
       const response = await fetch('/api/generate-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestData)
+        body: JSON.stringify(aiEnhancedPayload)
       });
 
-      // Enhanced error handling for server responses
-      let data;
-      const responseText = await response.text();
-      
-      console.log('Response status:', response.status);
-      console.log('Response text preview:', responseText.substring(0, 500));
-      
       if (!response.ok) {
-        // Handle non-200 responses
-        console.error('Server returned error:', response.status, responseText);
-        throw new Error(`Server returned ${response.status}: ${responseText.substring(0, 200)}...`);
-      }
-      
-      try {
-        data = JSON.parse(responseText);
-        console.log('Successfully parsed response:', {
-          success: data.success,
-          wordCount: data.metrics?.wordCount,
-          message: data.message
-        });
-      } catch (parseError) {
-        console.error('JSON Parse Error:', parseError);
-        console.error('Full response text:', responseText);
-        throw new Error(`Invalid JSON response from server. Response preview: ${responseText.substring(0, 300)}...`);
-      }
-      
-      if (data.success) {
-        setResult(data);
-      } else {
-        throw new Error(data.details || 'Generation failed');
+        const errorData = await response.json();
+        console.error('❌ AI Generation Error:', errorData);
+        throw new Error(errorData.details || errorData.error || `Server error: ${response.status}`);
       }
 
-    } catch (error) {
-      console.error('Generation error:', error);
-      setResult({
-        content: '',
-        metrics: {
-          wordCount: 0,
-          wordCountTarget: formData.wordCountTarget,
-          wordCountAccuracy: 0,
-          h2Count: 0,
-          affiliateLinkCount: 0,
-          generationAttempts: 0,
-          requirementsMet: {
-            wordCount: false,
-            structure: false,
-            affiliateLinks: false
-          }
-        },
-        validation: {},
-        success: false,
-        message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
-      });
+      const result = await response.json();
+      console.log('✅ AUTONOMOUS QUALITY ORCHESTRATION COMPLETE:', result);
+
+      if (result.success && result.article?.content) {
+        setGeneratedContent(result.article.content);
+        setQualityMetrics(result.article.qualityScore || result.metadata?.qualityMetrics);
+        setAutonomousOptimizations(result.article.optimizations || []);
+        setAiRecommendations(result.article.aiRecommendations || []);
+        
+        console.log(`🎊 SUCCESS: ${result.article.wordCount} words with ${result.article.qualityScore}% quality score!`);
+      } else {
+        throw new Error('Autonomous generation completed but no content received');
+      }
+
+    } catch (err) {
+      console.error('🚨 Autonomous Generation Error:', err);
+      setError(err.message || 'Autonomous content generation failed');
     } finally {
-      setIsGenerating(false);
+      setIsLoading(false);
+      setProcessingStage('');
     }
   };
 
-  const downloadWordPress = (format: 'html' | 'gutenberg' | 'classic') => {
-    if (!result?.content) return;
-
-    let content = result.content;
-    let filename = `${formData.keyword.replace(/\s+/g, '-')}-${format}.${format === 'html' ? 'html' : 'txt'}`;
-
-    if (format === 'gutenberg') {
-      content = content.replace(/<h2>/g, '<!-- wp:heading -->\n<h2>').replace(/<\/h2>/g, '</h2>\n<!-- /wp:heading -->');
-      content = content.replace(/<p>/g, '<!-- wp:paragraph -->\n<p>').replace(/<\/p>/g, '</p>\n<!-- /wp:paragraph -->');
+  // Download functionality with quality report
+  const downloadContent = (format) => {
+    if (!generatedContent) return;
+    
+    let downloadContent = generatedContent;
+    
+    if (format === 'with-report' && qualityMetrics) {
+      downloadContent += '\n\n--- AUTONOMOUS QUALITY REPORT ---\n';
+      downloadContent += `Overall Quality Score: ${qualityMetrics.overallScore || qualityMetrics}%\n`;
+      downloadContent += `Word Count Accuracy: ${qualityMetrics.wordCountAccuracy}%\n`;
+      downloadContent += `SEO Optimization: ${qualityMetrics.seoOptimization}%\n`;
+      downloadContent += `Keyword Optimization: ${qualityMetrics.keywordOptimization}%\n`;
+      downloadContent += `\nAI Optimizations Applied:\n${autonomousOptimizations.map(opt => `- ${opt}`).join('\n')}`;
+      downloadContent += `\nAI Recommendations:\n${aiRecommendations.map(rec => `- ${rec}`).join('\n')}`;
     }
-
-    const blob = new Blob([content], { type: 'text/plain' });
+    
+    const blob = new Blob([downloadContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
+    a.download = `${formData.keyword.replace(/\s+/g, '-')}-quality-${format}.txt`;
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div style={styles.container}>
-      <style>
-        {`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          
-          input::placeholder,
-          textarea::placeholder,
-          select option {
-            color: rgba(255, 255, 255, 0.5);
-          }
-          
-          input:focus,
-          textarea:focus,
-          select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-          }
-          
-          button:hover:not(:disabled) {
-            transform: translateY(-1px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-          }
-        `}
-      </style>
-      
-      <div style={styles.innerContainer}>
-        {/* Header */}
-        <div style={styles.header}>
-          <div style={styles.headerTitle}>
-            <Brain color="#60a5fa" size={48} />
-            <h1 style={styles.title}>Empire Intelligence System</h1>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%)',
+      padding: '20px'
+    }}>
+      <div style={{
+        maxWidth: '1400px',
+        margin: '0 auto',
+        background: 'rgba(255, 255, 255, 0.97)',
+        borderRadius: '24px',
+        padding: '40px',
+        boxShadow: '0 25px 50px rgba(0,0,0,0.15)'
+      }}>
+        {/* Enhanced Header with AI Branding */}
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px' }}>
+            <Brain size={32} style={{ color: '#667eea' }} />
+            <h1 style={{
+              fontSize: '3.2rem',
+              fontWeight: 'bold',
+              background: 'linear-gradient(135deg, #667eea, #764ba2, #667eea)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              margin: '0'
+            }}>
+              Autonomous Quality Intelligence System
+            </h1>
+            <Award size={32} style={{ color: '#764ba2' }} />
           </div>
-          <p style={styles.subtitle}>AI-Powered Content Generation Platform V17.0</p>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div style={styles.nav}>
-          <div style={styles.navContainer}>
-            <button
-              onClick={() => setActiveTab('generator')}
-              style={styles.navButton(activeTab === 'generator')}
-            >
-              <FileText size={20} style={{ marginRight: '0.5rem' }} />
-              Content Generator
-            </button>
-            <button
-              onClick={() => setActiveTab('admin')}
-              style={styles.navButton(activeTab === 'admin')}
-            >
-              <Settings size={20} style={{ marginRight: '0.5rem' }} />
-              Admin Controls
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              style={styles.navButton(activeTab === 'analytics')}
-            >
-              <BarChart3 size={20} style={{ marginRight: '0.5rem' }} />
-              Analytics
-            </button>
+          <p style={{ fontSize: '1.3rem', color: '#6b7280', fontWeight: '600', marginBottom: '8px' }}>
+            AI-Orchestrated Content Generation with Multi-Layer Quality Loops
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', fontSize: '14px', color: '#9ca3af' }}>
+            <span>🧠 Input Optimization</span>
+            <span>🔄 Quality Loops</span>
+            <span>🎯 Output Perfection</span>
+            <span>📊 Continuous Learning</span>
           </div>
         </div>
 
-        {/* Content Generator Tab */}
-        {activeTab === 'generator' && (
-          <div style={styles.gridContainer}>
-            {/* Input Form */}
-            <div style={styles.card}>
-              <h2 style={styles.cardTitle}>Content Generation</h2>
+        {/* Real-Time AI Analysis Dashboard */}
+        {realTimeAnalysis.overallInputScore > 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, #f3e8ff, #e0e7ff)',
+            border: '2px solid #8b5cf6',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '32px'
+          }}>
+            <h3 style={{
+              margin: '0 0 16px 0',
+              color: '#6b46c1',
+              fontSize: '1.2rem',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <Eye size={20} style={{ marginRight: '8px' }} />
+              Real-Time AI Analysis Dashboard
+              <span style={{
+                marginLeft: 'auto',
+                fontSize: '1.4rem',
+                color: realTimeAnalysis.overallInputScore >= 80 ? '#10b981' : realTimeAnalysis.overallInputScore >= 60 ? '#f59e0b' : '#ef4444'
+              }}>
+                {realTimeAnalysis.overallInputScore}% Quality Score
+              </span>
+            </h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '4px' }}>
+                  {realTimeAnalysis.keywordStrength >= 80 ? '🎯' : realTimeAnalysis.keywordStrength >= 60 ? '🔸' : '🔹'}
+                </div>
+                <div style={{ fontWeight: 'bold', color: '#374151' }}>Keyword Strength</div>
+                <div style={{ color: '#6b7280' }}>{realTimeAnalysis.keywordStrength}%</div>
+              </div>
               
-              <form onSubmit={handleSubmit} style={styles.form}>
-                {/* TIER 1: CONTENT STRATEGY */}
-                <div style={{...styles.section, ...styles.sectionBlue}}>
-                  <h3 style={{...styles.sectionTitle, ...styles.sectionTitleBlue}}>
-                    <Globe size={20} style={{ marginRight: '0.5rem' }} />
-                    Content Strategy
-                  </h3>
-                  
-                  <div style={styles.inputGrid2}>
-                    <div>
-                      <label style={{...styles.label, ...styles.labelBlue}}>Publication Target *</label>
-                      <select
-                        value={formData.publication}
-                        onChange={(e) => handlePublicationChange(e.target.value)}
-                        style={styles.select}
-                        required
-                      >
-                        <option value="">Select Publication</option>
-                        <option value="Globe Newswire">Globe Newswire</option>
-                        <option value="Newswire">Newswire</option>
-                        <option value="Our Sites">Our Sites</option>
-                      </select>
-                    </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '4px' }}>
+                  {realTimeAnalysis.publicationAlignment >= 80 ? '📈' : realTimeAnalysis.publicationAlignment >= 60 ? '📊' : '📉'}
+                </div>
+                <div style={{ fontWeight: 'bold', color: '#374151' }}>Publication Match</div>
+                <div style={{ color: '#6b7280' }}>{realTimeAnalysis.publicationAlignment}%</div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '4px' }}>
+                  {realTimeAnalysis.wordCountOptimization >= 80 ? '📝' : realTimeAnalysis.wordCountOptimization >= 60 ? '📄' : '📋'}
+                </div>
+                <div style={{ fontWeight: 'bold', color: '#374151' }}>Word Count</div>
+                <div style={{ color: '#6b7280' }}>{realTimeAnalysis.wordCountOptimization}%</div>
+              </div>
+              
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '4px' }}>
+                  {realTimeAnalysis.sourceQuality >= 80 ? '🔬' : realTimeAnalysis.sourceQuality >= 60 ? '📚' : '📖'}
+                </div>
+                <div style={{ fontWeight: 'bold', color: '#374151' }}>Source Quality</div>
+                <div style={{ color: '#6b7280' }}>{realTimeAnalysis.sourceQuality}%</div>
+              </div>
+            </div>
 
-                    <div>
-                      <label style={{...styles.label, ...styles.labelBlue}}>Primary Keyword *</label>
-                      <input
-                        type="text"
-                        value={formData.keyword}
-                        onChange={(e) => setFormData(prev => ({ ...prev, keyword: e.target.value }))}
-                        style={styles.input}
-                        placeholder="Enter primary keyword"
-                        required
-                      />
-                    </div>
-                  </div>
+            {aiRecommendations.length > 0 && (
+              <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(139, 92, 246, 0.1)', borderRadius: '8px' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#6b46c1' }}>🤖 AI Recommendations:</div>
+                <ul style={{ margin: '0', paddingLeft: '20px', color: '#374151' }}>
+                  {aiRecommendations.slice(0, 3).map((rec, index) => (
+                    <li key={index} style={{ marginBottom: '4px' }}>{rec}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
-                  <div style={styles.inputGrid2}>
-                    <div>
-                      <label style={{...styles.label, ...styles.labelBlue}}>Target Word Count *</label>
-                      <select
-                        value={formData.wordCountTarget}
-                        onChange={(e) => setFormData(prev => ({ ...prev, wordCountTarget: parseInt(e.target.value) }))}
-                        style={styles.select}
-                        required
-                      >
-                        <option value={6000}>6,000+ Words</option>
-                        <option value={8000}>8,000+ Words (Recommended)</option>
-                        <option value={10000}>10,000+ Words</option>
-                        <option value={12000}>12,000+ Words</option>
-                      </select>
-                    </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+          {/* Left Column - Enhanced Input Fields */}
+          <div>
+            {/* TIER 1: STRATEGIC CONTENT */}
+            <div style={{
+              background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+              border: '2px solid #f59e0b',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '24px',
+              position: 'relative'
+            }}>
+              <div style={{ position: 'absolute', top: '16px', right: '16px', fontSize: '12px', color: '#92400e' }}>
+                AI-Enhanced Input
+              </div>
+              
+              <h3 style={{
+                margin: '0 0 20px 0',
+                color: '#92400e',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <Target size={20} style={{ marginRight: '8px' }} />
+                Strategic Content Architecture
+              </h3>
 
-                    <div>
-                      <label style={{...styles.label, ...styles.labelBlue}}>Affiliate Link *</label>
-                      <input
-                        type="url"
-                        value={formData.affiliateLink}
-                        onChange={(e) => setFormData(prev => ({ ...prev, affiliateLink: e.target.value }))}
-                        style={styles.input}
-                        placeholder="https://example.com/affiliate"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {formData.contentType && (
-                    <div style={styles.successBox}>
-                      <p style={styles.successText}>
-                        <CheckCircle size={16} style={{ marginRight: '0.25rem' }} />
-                        Auto-selected: <strong>{formData.contentType}</strong> for {formData.publication}
-                      </p>
-                    </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  fontWeight: 'bold',
+                  marginBottom: '8px',
+                  color: '#92400e'
+                }}>
+                  Publication Target * {realTimeAnalysis.publicationAlignment > 0 && (
+                    <span style={{ color: realTimeAnalysis.publicationAlignment >= 80 ? '#10b981' : '#f59e0b', fontSize: '12px' }}>
+                      ({realTimeAnalysis.publicationAlignment}% match)
+                    </span>
                   )}
-                </div>
-
-                {/* TIER 2: SOURCE INTELLIGENCE */}
-                <div style={{...styles.section, ...styles.sectionPurple}}>
-                  <h3 style={{...styles.sectionTitle, ...styles.sectionTitlePurple}}>
-                    <Brain size={20} style={{ marginRight: '0.5rem' }} />
-                    Source Intelligence (Factual Accuracy Required)
-                  </h3>
-                  
-                  <div>
-                    <label style={{...styles.label, ...styles.labelPurple}}>Source URL</label>
-                    <input
-                      type="url"
-                      value={formData.sourceUrl}
-                      onChange={(e) => setFormData(prev => ({ ...prev, sourceUrl: e.target.value }))}
-                      style={styles.input}
-                      placeholder="https://competitor-analysis.com (optional)"
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{...styles.label, ...styles.labelPurple}}>Source Material *</label>
-                    <textarea
-                      value={formData.sourceMaterial}
-                      onChange={(e) => setFormData(prev => ({ ...prev, sourceMaterial: e.target.value }))}
-                      style={styles.textarea}
-                      placeholder="MANDATORY: Copy entire landing page content of the product/service being promoted. This ensures 100% factual accuracy and zero content errors."
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* TIER 3: CONTACT INFORMATION */}
-                <div style={{...styles.section, ...styles.sectionGreen}}>
-                  <h3 style={{...styles.sectionTitle, ...styles.sectionTitleGreen}}>
-                    <Users size={20} style={{ marginRight: '0.5rem' }} />
-                    Contact Information
-                  </h3>
-                  
-                  <div style={styles.inputGrid3}>
-                    <div>
-                      <label style={{...styles.label, ...styles.labelGreen}}>Company Name *</label>
-                      <input
-                        type="text"
-                        value={formData.companyName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
-                        style={styles.input}
-                        placeholder="Company Name"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{...styles.label, ...styles.labelGreen}}>Email *</label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                        style={styles.input}
-                        placeholder="contact@company.com"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{...styles.label, ...styles.labelGreen}}>Phone *</label>
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                        style={styles.input}
-                        placeholder="(555) 123-4567"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isGenerating}
+                </label>
+                <select
+                  value={formData.publication}
+                  onChange={(e) => setFormData(prev => ({ ...prev, publication: e.target.value }))}
                   style={{
-                    ...styles.submitButton,
-                    ...(isGenerating ? styles.submitButtonDisabled : {})
+                    width: '100%',
+                    padding: '12px',
+                    border: `2px solid ${realTimeAnalysis.publicationAlignment >= 80 ? '#10b981' : '#e5e7eb'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px'
                   }}
                 >
-                  {isGenerating ? 'Generating Content...' : 'Generate Content'}
-                </button>
-              </form>
+                  <option value="">Select Publication</option>
+                  <option value="Globe Newswire">Globe Newswire</option>
+                  <option value="Newswire">Newswire</option>
+                  <option value="Our Health Site">Our Health Site</option>
+                  <option value="Our Tech Site">Our Tech Site</option>
+                  <option value="Our Finance Site">Our Finance Site</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  fontWeight: 'bold',
+                  marginBottom: '8px',
+                  color: '#92400e'
+                }}>
+                  Primary Keyword * {realTimeAnalysis.keywordStrength > 0 && (
+                    <span style={{ color: realTimeAnalysis.keywordStrength >= 80 ? '#10b981' : '#f59e0b', fontSize: '12px' }}>
+                      ({realTimeAnalysis.keywordStrength}% strength)
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  value={formData.keyword}
+                  onChange={(e) => setFormData(prev => ({ ...prev, keyword: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `2px solid ${realTimeAnalysis.keywordStrength >= 80 ? '#10b981' : realTimeAnalysis.keywordStrength >= 60 ? '#f59e0b' : '#e5e7eb'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px'
+                  }}
+                  placeholder="lions mane benefits"
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  fontWeight: 'bold',
+                  marginBottom: '8px',
+                  color: '#92400e'
+                }}>
+                  Target Word Count * {realTimeAnalysis.wordCountOptimization > 0 && (
+                    <span style={{ color: realTimeAnalysis.wordCountOptimization >= 80 ? '#10b981' : '#f59e0b', fontSize: '12px' }}>
+                      ({realTimeAnalysis.wordCountOptimization}% optimal)
+                    </span>
+                  )}
+                </label>
+                <select
+                  value={formData.wordCount}
+                  onChange={(e) => setFormData(prev => ({ ...prev, wordCount: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `2px solid ${realTimeAnalysis.wordCountOptimization >= 80 ? '#10b981' : '#e5e7eb'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px'
+                  }}
+                >
+                  <option value="8000">8,000 words (AI Recommended)</option>
+                  <option value="6000">6,000 words</option>
+                  <option value="4000">4,000 words</option>
+                  <option value="10000">10,000 words</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontWeight: 'bold',
+                  marginBottom: '8px',
+                  color: '#92400e'
+                }}>
+                  Affiliate Link (AI Auto-Integration)
+                </label>
+                <input
+                  type="url"
+                  value={formData.affiliateLink}
+                  onChange={(e) => setFormData(prev => ({ ...prev, affiliateLink: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px'
+                  }}
+                  placeholder="https://affiliate-link.com (3-5 natural placements)"
+                />
+              </div>
             </div>
 
-            {/* Results Panel */}
-            <div style={styles.card}>
-              <h2 style={styles.cardTitle}>Results & Analytics</h2>
+            {/* TIER 2: SOURCE INTELLIGENCE - Enhanced */}
+            <div style={{
+              background: 'linear-gradient(135deg, #e0e7ff, #c7d2fe)',
+              border: '2px solid #6366f1',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '24px',
+              position: 'relative'
+            }}>
+              <div style={{ position: 'absolute', top: '16px', right: '16px', fontSize: '12px', color: '#4338ca' }}>
+                Zero Failure Policy
+              </div>
+              
+              <h3 style={{
+                margin: '0 0 20px 0',
+                color: '#4338ca',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <Brain size={20} style={{ marginRight: '8px' }} />
+                Source Intelligence (AI-Verified Accuracy)
+              </h3>
 
-              {/* Multi-Agent Analysis Display */}
-              {multiAgentAnalysis && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#93c5fd', marginBottom: '1rem' }}>
-                    Multi-Agent System Analysis
-                  </h3>
-                  <div style={{...styles.section, ...styles.sectionBlue}}>
-                    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white' }}>
-                        {multiAgentAnalysis.overallScore}/100
-                      </div>
-                      <div style={{ color: '#93c5fd' }}>Overall System Score</div>
-                    </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {Object.entries(multiAgentAnalysis).map(([key, value]: [string, any]) => {
-                        if (key === 'overallScore') return null;
-                        return (
-                          <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ color: '#93c5fd', fontSize: '0.875rem' }}>
-                              {key.replace(/Agent$/, '').replace(/([A-Z])/g, ' $1').trim()}
-                            </span>
-                            <span style={{ color: 'white', fontWeight: '600' }}>{value.score}/100</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{
+                  display: 'block',
+                  fontWeight: 'bold',
+                  marginBottom: '8px',
+                  color: '#4338ca'
+                }}>
+                  Source URL (AI Analysis)
+                </label>
+                <input
+                  type="url"
+                  value={formData.sourceUrl}
+                  onChange={(e) => setFormData(prev => ({ ...prev, sourceUrl: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px'
+                  }}
+                  placeholder="https://source-research.com"
+                />
+              </div>
+
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontWeight: 'bold',
+                  marginBottom: '8px',
+                  color: '#4338ca'
+                }}>
+                  Source Material (AI Quality Assessment) {realTimeAnalysis.sourceQuality > 0 && (
+                    <span style={{ color: realTimeAnalysis.sourceQuality >= 80 ? '#10b981' : '#f59e0b', fontSize: '12px' }}>
+                      ({realTimeAnalysis.sourceQuality}% quality)
+                    </span>
+                  )}
+                </label>
+                <textarea
+                  value={formData.sourceMaterial}
+                  onChange={(e) => setFormData(prev => ({ ...prev, sourceMaterial: e.target.value }))}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: `2px solid ${realTimeAnalysis.sourceQuality >= 80 ? '#10b981' : realTimeAnalysis.sourceQuality >= 60 ? '#f59e0b' : '#e5e7eb'}`,
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    height: '140px',
+                    resize: 'vertical'
+                  }}
+                  placeholder="Paste source research, facts, studies, or specific requirements here. AI will analyze for gaps and enhance accuracy..."
+                />
+                <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Characters: {formData.sourceMaterial.length}</span>
+                  <span style={{ color: realTimeAnalysis.sourceQuality >= 80 ? '#10b981' : '#f59e0b' }}>
+                    AI Status: {realTimeAnalysis.sourceQuality >= 80 ? '✅ HIGH QUALITY' : realTimeAnalysis.sourceQuality >= 60 ? '🔧 GOOD' : '📝 NEEDS MORE'}
+                  </span>
                 </div>
-              )}
+              </div>
+            </div>
 
-              {/* Generation Results */}
-              {isGenerating && (
-                <div style={styles.loading}>
-                  <div style={styles.spinner}></div>
-                  <p style={styles.loadingText}>Multi-agent system analyzing and generating content...</p>
-                </div>
-              )}
+            {/* TIER 3: CONTACT INFORMATION */}
+            <div style={{
+              background: 'linear-gradient(135deg, #d1fae5, #a7f3d0)',
+              border: '2px solid #10b981',
+              borderRadius: '16px',
+              padding: '24px'
+            }}>
+              <h3 style={{
+                margin: '0 0 20px 0',
+                color: '#047857',
+                fontSize: '1.1rem',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <Settings size={20} style={{ marginRight: '8px' }} />
+                Contact Information
+              </h3>
 
-              {result && (
-                <div>
-                  {/* Metrics Display */}
-                  <div style={styles.metricsGrid}>
-                    <div style={{...styles.metricCard, ...styles.metricCardBlue}}>
-                      <div style={styles.metricValue}>{result.metrics.wordCount.toLocaleString()}</div>
-                      <div style={{...styles.metricLabel, color: '#93c5fd'}}>Words Generated</div>
-                      <div style={{
-                        ...styles.metricStatus,
-                        color: result.metrics.wordCountAccuracy >= 90 ? '#4ade80' : '#fbbf24'
-                      }}>
-                        {result.metrics.wordCountAccuracy}% Accuracy
-                      </div>
-                    </div>
-                    <div style={{...styles.metricCard, ...styles.metricCardPurple}}>
-                      <div style={styles.metricValue}>{result.metrics.h2Count}</div>
-                      <div style={{...styles.metricLabel, color: '#c4b5fd'}}>H2 Sections</div>
-                      <div style={{
-                        ...styles.metricStatus,
-                        color: result.metrics.requirementsMet.structure ? '#4ade80' : '#ef4444'
-                      }}>
-                        {result.metrics.requirementsMet.structure ? 'Met' : 'Needs Work'}
-                      </div>
-                    </div>
-                    <div style={{...styles.metricCard, ...styles.metricCardGreen}}>
-                      <div style={styles.metricValue}>{result.metrics.affiliateLinkCount}</div>
-                      <div style={{...styles.metricLabel, color: '#86efac'}}>Affiliate Links</div>
-                      <div style={{
-                        ...styles.metricStatus,
-                        color: result.metrics.requirementsMet.affiliateLinks ? '#4ade80' : '#fbbf24'
-                      }}>
-                        {result.metrics.requirementsMet.affiliateLinks ? 'Optimized' : 'Partial'}
-                      </div>
-                    </div>
-                    <div style={{...styles.metricCard, ...styles.metricCardOrange}}>
-                      <div style={styles.metricValue}>{result.metrics.generationAttempts}</div>
-                      <div style={{...styles.metricLabel, color: '#fdba74'}}>Attempts</div>
-                      <div style={{...styles.metricStatus, color: '#fdba74'}}>
-                        {result.success ? 'Success' : 'Partial'}
-                      </div>
-                    </div>
+              <div style={{ marginBottom: '16px' }}>
+                <input
+                  type="text"
+                  value={formData.company}
+                  onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+                  style={{ width: '100%', padding: '12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
+                  placeholder="Your Company Name"
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  style={{ width: '100%', padding: '12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
+                  placeholder="contact@company.com"
+                />
+              </div>
+
+              <div>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  style={{ width: '100%', padding: '12px', border: '2px solid #e5e7eb', borderRadius: '8px' }}
+                  placeholder="(555) 123-4567"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column - AI Processing & Results */}
+          <div>
+            {/* AI Generation Control Panel */}
+            <button
+              onClick={handleAutonomousGeneration}
+              disabled={isLoading || !formData.publication || !formData.keyword}
+              style={{
+                width: '100%',
+                padding: '24px',
+                background: isLoading 
+                  ? 'linear-gradient(135deg, #9ca3af, #6b7280)' 
+                  : 'linear-gradient(135deg, #667eea, #764ba2, #667eea)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '16px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                marginBottom: '32px',
+                transition: 'all 0.3s ease',
+                boxShadow: isLoading ? 'none' : '0 8px 20px rgba(102, 126, 234, 0.3)'
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '18px' }}>AI Orchestration Active</div>
+                    <div style={{ fontSize: '12px', opacity: '0.9' }}>{processingStage}</div>
                   </div>
+                </>
+              ) : (
+                <>
+                  <Brain size={24} />
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '18px' }}>Activate Autonomous Generation</div>
+                    <div style={{ fontSize: '12px', opacity: '0.9' }}>4-Stage AI Quality Orchestration</div>
+                  </div>
+                  <Zap size={24} />
+                </>
+              )}
+            </button>
 
-                  {/* Status Message */}
+            {/* Error Display */}
+            {error && (
+              <div style={{
+                background: '#fef2f2',
+                border: '2px solid #ef4444',
+                borderRadius: '16px',
+                padding: '20px',
+                marginBottom: '24px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#dc2626', marginBottom: '8px' }}>
+                  <AlertCircle size={20} />
+                  <strong>Autonomous System Error:</strong>
+                </div>
+                <p style={{ margin: '0', color: '#dc2626' }}>{error}</p>
+              </div>
+            )}
+
+            {/* Quality Metrics Dashboard */}
+            {qualityMetrics && (
+              <div style={{
+                background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+                border: '2px solid #10b981',
+                borderRadius: '16px',
+                padding: '24px',
+                marginBottom: '24px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#047857', marginBottom: '16px' }}>
+                  <Award size={24} />
+                  <div>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold' }}>Quality Achievement</div>
+                    <div style={{ fontSize: '14px', opacity: '0.8' }}>AI-Verified Content Excellence</div>
+                  </div>
                   <div style={{
-                    borderRadius: '0.5rem',
-                    padding: '1rem',
-                    marginBottom: '1.5rem',
-                    background: result.success 
-                      ? 'rgba(34, 197, 94, 0.2)' 
-                      : 'rgba(251, 191, 36, 0.2)',
-                    color: result.success ? '#86efac' : '#fde68a'
+                    marginLeft: 'auto',
+                    fontSize: '2.5rem',
+                    fontWeight: 'bold',
+                    color: qualityMetrics.overallScore >= 90 ? '#10b981' : qualityMetrics.overallScore >= 80 ? '#f59e0b' : '#ef4444'
                   }}>
-                    <p style={{ fontWeight: '500' }}>{result.message}</p>
+                    {qualityMetrics.overallScore || qualityMetrics}%
                   </div>
+                </div>
 
-                  {/* Download Options */}
-                  {result.content && (
-                    <div>
-                      <h3 style={{
-                        fontSize: '1.125rem',
-                        fontWeight: '600',
-                        color: 'white',
-                        marginBottom: '1rem'
-                      }}>
-                        Download Options
-                      </h3>
-                      <div style={styles.downloadGrid}>
-                        <button
-                          onClick={() => downloadWordPress('html')}
-                          style={{...styles.downloadButton, ...styles.downloadButtonBlue}}
-                        >
-                          <Download size={20} style={{ marginRight: '0.5rem' }} />
-                          HTML Export
-                        </button>
-                        <button
-                          onClick={() => downloadWordPress('gutenberg')}
-                          style={{...styles.downloadButton, ...styles.downloadButtonPurple}}
-                        >
-                          <Download size={20} style={{ marginRight: '0.5rem' }} />
-                          Gutenberg
-                        </button>
-                        <button
-                          onClick={() => downloadWordPress('classic')}
-                          style={{...styles.downloadButton, ...styles.downloadButtonGreen}}
-                        >
-                          <Download size={20} style={{ marginRight: '0.5rem' }} />
-                          Classic Editor
-                        </button>
-                      </div>
+                {typeof qualityMetrics === 'object' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#047857' }}>Word Count</div>
+                      <div style={{ color: '#10b981' }}>{Math.round(qualityMetrics.wordCountAccuracy)}%</div>
                     </div>
+                    <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#047857' }}>SEO Score</div>
+                      <div style={{ color: '#10b981' }}>{Math.round(qualityMetrics.seoOptimization)}%</div>
+                    </div>
+                    <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#047857' }}>Keywords</div>
+                      <div style={{ color: '#10b981' }}>{Math.round(qualityMetrics.keywordOptimization)}%</div>
+                    </div>
+                  </div>
+                )}
+
+                {autonomousOptimizations.length > 0 && (
+                  <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#047857', fontSize: '14px' }}>🤖 Applied Optimizations:</div>
+                    <div style={{ fontSize: '12px', color: '#059669' }}>
+                      {autonomousOptimizations.slice(0, 4).join(' • ')}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+                  <button
+                    onClick={() => downloadContent('standard')}
+                    style={{
+                      padding: '10px 16px',
+                      background: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <Download size={16} />
+                    Download Content
+                  </button>
+                  <button
+                    onClick={() => downloadContent('with-report')}
+                    style={{
+                      padding: '10px 16px',
+                      background: '#6366f1',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <TrendingUp size={16} />
+                    Download with AI Report
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Enhanced Content Preview */}
+            {generatedContent && (
+              <div style={{
+                background: '#ffffff',
+                border: '2px solid #e5e7eb',
+                borderRadius: '16px',
+                padding: '24px',
+                maxHeight: '500px',
+                overflowY: 'auto'
+              }}>
+                <h4 style={{ margin: '0 0 16px 0', color: '#374151', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Eye size={18} />
+                  AI-Optimized Content Preview
+                  {qualityMetrics && (
+                    <span style={{
+                      marginLeft: 'auto',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      background: qualityMetrics.overallScore >= 90 ? '#10b981' : '#f59e0b',
+                      color: 'white'
+                    }}>
+                      {qualityMetrics.overallScore || qualityMetrics}% Quality
+                    </span>
+                  )}
+                </h4>
+                <div style={{
+                  fontSize: '14px',
+                  lineHeight: '1.7',
+                  color: '#4b5563',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {generatedContent.substring(0, 1500)}
+                  {generatedContent.length > 1500 && (
+                    <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>
+                      ... ({Math.round((generatedContent.length - 1500) / 5)} more words)
+                    </span>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-        )}
-
-        {/* Admin Controls Tab */}
-        {activeTab === 'admin' && (
-          <div style={{...styles.card, maxWidth: '1000px', margin: '0 auto'}}>
-            <h2 style={styles.cardTitle}>Admin Controls</h2>
-            
-            <div style={styles.inputGrid2}>
-              <div>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#93c5fd', marginBottom: '1rem' }}>
-                  Publication Settings
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{...styles.section, ...styles.sectionBlue}}>
-                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Globe Newswire</h4>
-                    <p style={{ color: '#93c5fd', fontSize: '0.875rem', margin: 0 }}>Press Release format, formal tone</p>
-                  </div>
-                  <div style={{...styles.section, ...styles.sectionBlue}}>
-                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Newswire</h4>
-                    <p style={{ color: '#93c5fd', fontSize: '0.875rem', margin: 0 }}>News Article format, journalistic tone</p>
-                  </div>
-                  <div style={{...styles.section, ...styles.sectionBlue}}>
-                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Our Sites</h4>
-                    <p style={{ color: '#93c5fd', fontSize: '0.875rem', margin: 0 }}>Blog Post format, conversational tone</p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#c4b5fd', marginBottom: '1rem' }}>
-                  System Configuration
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{...styles.section, ...styles.sectionPurple}}>
-                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>API Status</h4>
-                    <p style={{ color: '#4ade80', fontSize: '0.875rem', margin: 0 }}>✅ Claude API Connected</p>
-                  </div>
-                  <div style={{...styles.section, ...styles.sectionPurple}}>
-                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Multi-Agent System</h4>
-                    <p style={{ color: '#4ade80', fontSize: '0.875rem', margin: 0 }}>✅ All 5 Agents Operational</p>
-                  </div>
-                  <div style={{...styles.section, ...styles.sectionPurple}}>
-                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Word Count Enforcement</h4>
-                    <p style={{ color: '#4ade80', fontSize: '0.875rem', margin: 0 }}>✅ Backend Validation Active</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Analytics Tab */}
-        {activeTab === 'analytics' && (
-          <div style={{...styles.card, maxWidth: '1000px', margin: '0 auto'}}>
-            <h2 style={styles.cardTitle}>Analytics Dashboard</h2>
-            
-            <div style={styles.inputGrid3}>
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%)',
-                borderRadius: '0.75rem',
-                padding: '1.5rem'
-              }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', marginBottom: '0.5rem' }}>
-                  System Performance
-                </h3>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#60a5fa', marginBottom: '0.25rem' }}>95%</div>
-                <p style={{ color: '#93c5fd', fontSize: '0.875rem', margin: 0 }}>Word Count Accuracy</p>
-              </div>
-              
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%)',
-                borderRadius: '0.75rem',
-                padding: '1.5rem'
-              }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', marginBottom: '0.5rem' }}>
-                  Content Quality
-                </h3>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#a78bfa', marginBottom: '0.25rem' }}>87/100</div>
-                <p style={{ color: '#c4b5fd', fontSize: '0.875rem', margin: 0 }}>Average Quality Score</p>
-              </div>
-              
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(21, 128, 61, 0.2) 100%)',
-                borderRadius: '0.75rem',
-                padding: '1.5rem'
-              }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', marginBottom: '0.5rem' }}>
-                  Generation Success
-                </h3>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#4ade80', marginBottom: '0.25rem' }}>98%</div>
-                <p style={{ color: '#86efac', fontSize: '0.875rem', margin: 0 }}>Successful Generations</p>
-              </div>
-            </div>
-
-            <div style={{ marginTop: '2rem' }}>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', marginBottom: '1rem' }}>
-                Recent Activity
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Content Generated</h4>
-                    <p style={{ color: '#d1d5db', fontSize: '0.875rem', margin: 0 }}>
-                      8,247 words • Globe Newswire • AI Technology
-                    </p>
-                  </div>
-                  <div style={{ color: '#4ade80', fontSize: '0.875rem' }}>Success</div>
-                </div>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
-                  <div>
-                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Content Generated</h4>
-                    <p style={{ color: '#d1d5db', fontSize: '0.875rem', margin: 0 }}>
-                      6,543 words • Our Sites • Digital Marketing
-                    </p>
-                  </div>
-                  <div style={{ color: '#4ade80', fontSize: '0.875rem' }}>Success</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
-};
+}
 
-export default App;
+// Helper Functions for Real-Time Analysis
+function calculateKeywordStrength(keyword) {
+  if (!keyword) return 0;
+  let score = 50;
+  if (keyword.length >= 3) score += 20;
+  if (keyword.includes(' ')) score += 15; // Long-tail bonus
+  if (/\b(benefits|review|guide|how to|best|top)\b/i.test(keyword)) score += 15;
+  return Math.min(100, score);
+}
+
+function calculatePublicationAlignment(publication, keyword) {
+  if (!publication || !keyword) return 0;
+  let score = 60;
+  
+  // Health site alignment
+  if (publication.includes('Health') && /\b(health|supplement|nutrition|wellness|medical)\b/i.test(keyword)) score += 40;
+  // Tech site alignment  
+  if (publication.includes('Tech') && /\b(software|technology|ai|digital|app)\b/i.test(keyword)) score += 40;
+  // Finance site alignment
+  if (publication.includes('Finance') && /\b(investment|money|financial|crypto|trading)\b/i.test(keyword)) score += 40;
+  // News wire general alignment
+  if (publication.includes('wire')) score += 20;
+  
+  return Math.min(100, score);
+}
+
+function calculateWordCountOptimization(wordCount, keyword) {
+  const count = parseInt(wordCount) || 0;
+  if (count >= 8000) return 100;
+  if (count >= 6000) return 85;
+  if (count >= 4000) return 70;
+  if (count >= 2000) return 55;
+  return 40;
+}
+
+function calculateSourceQuality(sourceMaterial) {
+  if (!sourceMaterial) return 30;
+  let score = 40;
+  if (sourceMaterial.length >= 100) score += 20;
+  if (sourceMaterial.length >= 300) score += 20;
+  if (sourceMaterial.includes('http')) score += 10; // Has sources
+  if (/\b(study|research|report|data|statistics)\b/i.test(sourceMaterial)) score += 10;
+  return Math.min(100, score);
+}
+
+function generateAIRecommendations(analysis, formData) {
+  const recommendations = [];
+  
+  if (analysis.keywordStrength < 80) {
+    recommendations.push('Consider adding modifying words like "benefits", "guide", or "review" to strengthen your keyword');
+  }
+  
+  if (analysis.publicationAlignment < 80) {
+    recommendations.push('Your keyword doesn\'t strongly align with the selected publication - consider switching publications or adjusting your keyword');
+  }
+  
+  if (analysis.wordCountOptimization < 90) {
+    recommendations.push('For maximum SEO impact, consider increasing word count to 8,000+ words');
+  }
+  
+  if (analysis.sourceQuality < 70) {
+    recommendations.push('Add more source material with studies, statistics, or research data to improve content accuracy and authority');
+  }
+  
+  if (!formData.affiliateLink) {
+    recommendations.push('Add an affiliate link to enable natural monetization integration throughout the content');
+  }
+  
+  return recommendations;
+}
