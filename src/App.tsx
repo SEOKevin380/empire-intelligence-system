@@ -106,6 +106,7 @@ const App: React.FC = () => {
         niche: 'health-supplements',
         keyword: 'test keyword',
         sourceMaterial: 'test source material',
+        companyName: 'Test Company',
         modelTier: 'efficient'
       };
       
@@ -179,7 +180,7 @@ const App: React.FC = () => {
         additionalRequirements: additionalRequirements || "Follow industry best practices",
         keyword,
         affiliateLink,
-        companyName,
+        companyName: companyName || "Default Company", // Ensure companyName is never empty
         email,
         phone,
         authorCredentials,
