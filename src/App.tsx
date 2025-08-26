@@ -53,7 +53,6 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [multiAgentAnalysis, setMultiAgentAnalysis] = useState<any>(null);
-  const [apiTestResult, setApiTestResult] = useState<string>('');
 
   // Inline Styles (No Tailwind dependency)
   const styles = {
@@ -465,6 +464,12 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
         multiAgentAnalysis: enhancedPrompt
       };
 
+      console.log('Sending request with data:', {
+        ...requestData,
+        sourceMaterial: `${requestData.sourceMaterial.length} characters`,
+        multiAgentAnalysis: `${requestData.multiAgentAnalysis.length} characters`
+      });
+
       const response = await fetch('/api/generate-content', {
         method: 'POST',
         headers: {
@@ -478,19 +483,25 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
       const responseText = await response.text();
       
       console.log('Response status:', response.status);
-      console.log('Response text preview:', responseText.substring(0, 200));
+      console.log('Response text preview:', responseText.substring(0, 500));
       
       if (!response.ok) {
         // Handle non-200 responses
-        throw new Error(`Server returned ${response.status}: ${responseText.substring(0, 100)}...`);
+        console.error('Server returned error:', response.status, responseText);
+        throw new Error(`Server returned ${response.status}: ${responseText.substring(0, 200)}...`);
       }
       
       try {
         data = JSON.parse(responseText);
+        console.log('Successfully parsed response:', {
+          success: data.success,
+          wordCount: data.metrics?.wordCount,
+          message: data.message
+        });
       } catch (parseError) {
         console.error('JSON Parse Error:', parseError);
         console.error('Full response text:', responseText);
-        throw new Error(`Invalid JSON response from server. Response was: ${responseText.substring(0, 200)}...`);
+        throw new Error(`Invalid JSON response from server. Response preview: ${responseText.substring(0, 300)}...`);
       }
       
       if (data.success) {
@@ -545,33 +556,6 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
-
-  // Test API connectivity
-  const testAPI = async () => {
-    try {
-      setApiTestResult('Testing API...');
-      const response = await fetch('/api/generate-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ test: true })
-      });
-
-      const responseText = await response.text();
-      console.log('Test response:', responseText);
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        setApiTestResult(`✅ API Working: ${data.message}`);
-      } catch (parseError) {
-        setApiTestResult(`❌ JSON Parse Error: ${responseText.substring(0, 100)}`);
-      }
-    } catch (error) {
-      setApiTestResult(`❌ Network Error: ${error.message}`);
-    }
   };
 
   return (
@@ -810,40 +794,6 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
                 >
                   {isGenerating ? 'Generating Content...' : 'Generate Content'}
                 </button>
-
-                {/* API Test Button */}
-                <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  borderRadius: '0.5rem', 
-                  padding: '1rem',
-                  textAlign: 'center'
-                }}>
-                  <button
-                    type="button"
-                    onClick={testAPI}
-                    style={{
-                      background: 'rgba(59, 130, 246, 0.3)',
-                      color: '#93c5fd',
-                      border: '1px solid rgba(59, 130, 246, 0.5)',
-                      borderRadius: '0.5rem',
-                      padding: '0.5rem 1rem',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem',
-                      marginBottom: '0.5rem'
-                    }}
-                  >
-                    Test API Connection
-                  </button>
-                  {apiTestResult && (
-                    <div style={{
-                      color: apiTestResult.includes('✅') ? '#4ade80' : '#ef4444',
-                      fontSize: '0.875rem',
-                      fontFamily: 'monospace'
-                    }}>
-                      {apiTestResult}
-                    </div>
-                  )}
-                </div>
               </form>
             </div>
 
