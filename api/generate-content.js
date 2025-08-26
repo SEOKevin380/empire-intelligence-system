@@ -107,10 +107,18 @@ export default async function handler(req, res) {
     const prompt = `
 CRITICAL SYSTEM CONSTRAINTS - BINDING REQUIREMENTS:
 
-1. WORD COUNT REQUIREMENT: Generate exactly ${wordCountTarget} words or more. This is mandatory.
-2. STRUCTURE REQUIREMENT: Include at least 6 H2 sections with descriptive headlines.
-3. CONTACT INTEGRATION: Include company contact information: ${companyName}, ${email}, ${phone}
-4. FACTUAL ACCURACY MANDATE: Base ALL product/service information EXCLUSIVELY on the source material below.
+1. WORD COUNT REQUIREMENT: Generate EXACTLY ${wordCountTarget} words or more. This is MANDATORY and will be validated. Aim for 8000-12000 words for comprehensive coverage.
+
+2. AFFILIATE LINK REQUIREMENT: You MUST integrate this affiliate link "${req.body.affiliateLink || ''}" exactly 4-5 times throughout the content in natural, contextually relevant ways. Examples:
+   - "You can learn more about this product at [AFFILIATE LINK]"
+   - "For additional information and to explore options, visit [AFFILIATE LINK]"
+   - "To discover more about these benefits, check out [AFFILIATE LINK]"
+
+3. STRUCTURE REQUIREMENT: Include at least 8-10 H2 sections with descriptive headlines for comprehensive coverage.
+
+4. CONTACT INTEGRATION: Include company contact information naturally: ${companyName}, ${email}, ${phone}
+
+5. FACTUAL ACCURACY MANDATE: Base ALL product/service information EXCLUSIVELY on the source material below. Never invent details.
 
 MANDATORY SOURCE MATERIAL FOR FACTUAL ACCURACY:
 ${sourceMaterial}
@@ -121,21 +129,26 @@ PRIMARY KEYWORD: ${keyword}
 
 GENERATION INSTRUCTIONS:
 - Write comprehensive, detailed content covering the topic thoroughly
-- Each H2 section should be 800-1200 words minimum
+- Each H2 section should be 800-1200 words minimum to reach the ${wordCountTarget} word target
 - Use ONLY factual information from the source material provided
 - Never invent, assume, or add details not explicitly stated
-- Include specific examples and detailed explanations
+- Include specific examples, detailed explanations, and comprehensive analysis
+- Naturally integrate the affiliate link ${req.body.affiliateLink ? '4-5 times with proper context' : '(no affiliate link provided)'}
 - Use professional, authoritative tone appropriate for ${publication}
 - Ensure content is valuable, informative, and engaging
+- Continue writing until you reach the full ${wordCountTarget} word count
+- End with a strong conclusion that summarizes key points
 
-Begin generation now:
+CRITICAL: Generate the COMPLETE content without cutting off. Reach the full word count target of ${wordCountTarget} words.
+
+Begin comprehensive generation now:
 `;
 
     console.log('Calling Anthropic API...');
     
     const message = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 4000, // Fixed: Stay under Claude Haiku's 4096 limit
+      model: 'claude-3-5-sonnet-20241022', // UPGRADED: More powerful model with higher limits
+      max_tokens: 8000, // Back to 8000 tokens for full content generation
       messages: [
         {
           role: 'user',
