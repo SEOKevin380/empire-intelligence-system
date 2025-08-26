@@ -1,4 +1,4 @@
-// UPDATED App.tsx - OPTIMAL 9-FIELD ARCHITECTURE
+// FIXED App.tsx - STANDALONE CSS (NO TAILWIND DEPENDENCY)
 import React, { useState } from 'react';
 import { Download, Settings, BarChart3, Users, FileText, Globe, Brain, CheckCircle } from 'lucide-react';
 
@@ -53,6 +53,304 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState<GenerationResult | null>(null);
   const [multiAgentAnalysis, setMultiAgentAnalysis] = useState<any>(null);
+
+  // Inline Styles (No Tailwind dependency)
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%)',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
+    },
+    innerContainer: {
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '2rem 1rem'
+    },
+    header: {
+      textAlign: 'center' as const,
+      marginBottom: '3rem'
+    },
+    headerTitle: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: '1rem'
+    },
+    title: {
+      fontSize: '2.5rem',
+      fontWeight: 'bold',
+      color: 'white',
+      marginLeft: '1rem'
+    },
+    subtitle: {
+      fontSize: '1.25rem',
+      color: '#93c5fd'
+    },
+    nav: {
+      display: 'flex',
+      justifyContent: 'center',
+      marginBottom: '2rem'
+    },
+    navContainer: {
+      background: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(10px)',
+      borderRadius: '0.75rem',
+      padding: '0.5rem'
+    },
+    navButton: (active: boolean) => ({
+      padding: '0.75rem 1.5rem',
+      borderRadius: '0.5rem',
+      fontWeight: '500',
+      transition: 'all 0.3s ease',
+      background: active ? '#3b82f6' : 'transparent',
+      color: active ? 'white' : '#93c5fd',
+      border: 'none',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center'
+    }),
+    gridContainer: {
+      display: 'grid',
+      gridTemplateColumns: '1fr',
+      gap: '2rem'
+    },
+    '@media (min-width: 1024px)': {
+      gridContainer: {
+        gridTemplateColumns: '1fr 1fr'
+      }
+    },
+    card: {
+      background: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(10px)',
+      borderRadius: '1rem',
+      padding: '2rem',
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+    },
+    cardTitle: {
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+      color: 'white',
+      marginBottom: '1.5rem'
+    },
+    form: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: '1.5rem'
+    },
+    section: {
+      borderRadius: '0.75rem',
+      padding: '1.5rem'
+    },
+    sectionBlue: {
+      background: 'rgba(59, 130, 246, 0.2)'
+    },
+    sectionPurple: {
+      background: 'rgba(139, 92, 246, 0.2)'
+    },
+    sectionGreen: {
+      background: 'rgba(34, 197, 94, 0.2)'
+    },
+    sectionTitle: {
+      fontSize: '1.125rem',
+      fontWeight: '600',
+      marginBottom: '1rem',
+      display: 'flex',
+      alignItems: 'center'
+    },
+    sectionTitleBlue: {
+      color: '#93c5fd'
+    },
+    sectionTitlePurple: {
+      color: '#c4b5fd'
+    },
+    sectionTitleGreen: {
+      color: '#86efac'
+    },
+    inputGrid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr',
+      gap: '1rem'
+    },
+    inputGrid2: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '1rem'
+    },
+    inputGrid3: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '1rem'
+    },
+    '@media (max-width: 768px)': {
+      inputGrid2: {
+        gridTemplateColumns: '1fr'
+      },
+      inputGrid3: {
+        gridTemplateColumns: '1fr'
+      }
+    },
+    label: {
+      display: 'block',
+      fontSize: '0.875rem',
+      fontWeight: '500',
+      marginBottom: '0.5rem'
+    },
+    labelBlue: {
+      color: '#93c5fd'
+    },
+    labelPurple: {
+      color: '#c4b5fd'
+    },
+    labelGreen: {
+      color: '#86efac'
+    },
+    input: {
+      width: '100%',
+      padding: '0.75rem 1rem',
+      background: 'rgba(255, 255, 255, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      borderRadius: '0.5rem',
+      color: 'white',
+      fontSize: '1rem'
+    },
+    textarea: {
+      width: '100%',
+      padding: '0.75rem 1rem',
+      background: 'rgba(255, 255, 255, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      borderRadius: '0.5rem',
+      color: 'white',
+      fontSize: '1rem',
+      height: '6rem',
+      resize: 'none' as const
+    },
+    select: {
+      width: '100%',
+      padding: '0.75rem 1rem',
+      background: 'rgba(255, 255, 255, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      borderRadius: '0.5rem',
+      color: 'white',
+      fontSize: '1rem'
+    },
+    submitButton: {
+      width: '100%',
+      background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)',
+      color: 'white',
+      fontWeight: 'bold',
+      padding: '1rem 2rem',
+      borderRadius: '0.75rem',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '1rem',
+      transition: 'all 0.3s ease'
+    },
+    submitButtonDisabled: {
+      opacity: 0.5,
+      cursor: 'not-allowed'
+    },
+    successBox: {
+      background: 'rgba(34, 197, 94, 0.2)',
+      borderRadius: '0.5rem',
+      padding: '0.75rem',
+      marginTop: '1rem'
+    },
+    successText: {
+      color: '#86efac',
+      fontSize: '0.875rem',
+      display: 'flex',
+      alignItems: 'center'
+    },
+    metricsGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '1rem',
+      marginBottom: '1.5rem'
+    },
+    '@media (min-width: 768px)': {
+      metricsGrid: {
+        gridTemplateColumns: 'repeat(4, 1fr)'
+      }
+    },
+    metricCard: {
+      borderRadius: '0.5rem',
+      padding: '1rem',
+      textAlign: 'center' as const
+    },
+    metricCardBlue: {
+      background: 'rgba(59, 130, 246, 0.2)'
+    },
+    metricCardPurple: {
+      background: 'rgba(139, 92, 246, 0.2)'
+    },
+    metricCardGreen: {
+      background: 'rgba(34, 197, 94, 0.2)'
+    },
+    metricCardOrange: {
+      background: 'rgba(249, 115, 22, 0.2)'
+    },
+    metricValue: {
+      fontSize: '1.5rem',
+      fontWeight: 'bold',
+      color: 'white'
+    },
+    metricLabel: {
+      fontSize: '0.875rem',
+      marginTop: '0.25rem'
+    },
+    metricStatus: {
+      fontSize: '0.75rem',
+      fontWeight: '500',
+      marginTop: '0.25rem'
+    },
+    downloadGrid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr',
+      gap: '1rem'
+    },
+    '@media (min-width: 768px)': {
+      downloadGrid: {
+        gridTemplateColumns: 'repeat(3, 1fr)'
+      }
+    },
+    downloadButton: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0.75rem 1rem',
+      borderRadius: '0.5rem',
+      border: 'none',
+      cursor: 'pointer',
+      color: 'white',
+      fontWeight: '500',
+      transition: 'all 0.3s ease'
+    },
+    downloadButtonBlue: {
+      background: '#3b82f6'
+    },
+    downloadButtonPurple: {
+      background: '#8b5cf6'
+    },
+    downloadButtonGreen: {
+      background: '#10b981'
+    },
+    loading: {
+      textAlign: 'center' as const,
+      padding: '3rem 0'
+    },
+    spinner: {
+      width: '4rem',
+      height: '4rem',
+      border: '2px solid rgba(59, 130, 246, 0.2)',
+      borderTop: '2px solid #3b82f6',
+      borderRadius: '50%',
+      animation: 'spin 1s linear infinite',
+      margin: '0 auto 1rem'
+    },
+    loadingText: {
+      color: '#93c5fd'
+    }
+  };
 
   // Content type auto-selection based on publication
   const getContentTypeForPublication = (publication: string): string => {
@@ -231,51 +529,67 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
+    <div style={styles.container}>
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          
+          input::placeholder,
+          textarea::placeholder,
+          select option {
+            color: rgba(255, 255, 255, 0.5);
+          }
+          
+          input:focus,
+          textarea:focus,
+          select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+          }
+          
+          button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+          }
+        `}
+      </style>
+      
+      <div style={styles.innerContainer}>
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <Brain className="h-12 w-12 text-blue-400 mr-4" />
-            <h1 className="text-4xl font-bold text-white">Empire Intelligence System</h1>
+        <div style={styles.header}>
+          <div style={styles.headerTitle}>
+            <Brain color="#60a5fa" size={48} />
+            <h1 style={styles.title}>Empire Intelligence System</h1>
           </div>
-          <p className="text-xl text-blue-200">AI-Powered Content Generation Platform V17.0</p>
+          <p style={styles.subtitle}>AI-Powered Content Generation Platform V17.0</p>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-2">
+        <div style={styles.nav}>
+          <div style={styles.navContainer}>
             <button
               onClick={() => setActiveTab('generator')}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                activeTab === 'generator'
-                  ? 'bg-blue-500 text-white shadow-lg'
-                  : 'text-blue-200 hover:text-white'
-              }`}
+              style={styles.navButton(activeTab === 'generator')}
             >
-              <FileText className="inline h-5 w-5 mr-2" />
+              <FileText size={20} style={{ marginRight: '0.5rem' }} />
               Content Generator
             </button>
             <button
               onClick={() => setActiveTab('admin')}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                activeTab === 'admin'
-                  ? 'bg-blue-500 text-white shadow-lg'
-                  : 'text-blue-200 hover:text-white'
-              }`}
+              style={styles.navButton(activeTab === 'admin')}
             >
-              <Settings className="inline h-5 w-5 mr-2" />
+              <Settings size={20} style={{ marginRight: '0.5rem' }} />
               Admin Controls
             </button>
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`px-6 py-3 rounded-lg font-medium transition-all ${
-                activeTab === 'analytics'
-                  ? 'bg-blue-500 text-white shadow-lg'
-                  : 'text-blue-200 hover:text-white'
-              }`}
+              style={styles.navButton(activeTab === 'analytics')}
             >
-              <BarChart3 className="inline h-5 w-5 mr-2" />
+              <BarChart3 size={20} style={{ marginRight: '0.5rem' }} />
               Analytics
             </button>
           </div>
@@ -283,26 +597,26 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
 
         {/* Content Generator Tab */}
         {activeTab === 'generator' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div style={styles.gridContainer}>
             {/* Input Form */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl">
-              <h2 className="text-2xl font-bold text-white mb-6">Content Generation</h2>
+            <div style={styles.card}>
+              <h2 style={styles.cardTitle}>Content Generation</h2>
               
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} style={styles.form}>
                 {/* TIER 1: CONTENT STRATEGY */}
-                <div className="bg-blue-500/20 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-blue-200 mb-4 flex items-center">
-                    <Globe className="h-5 w-5 mr-2" />
+                <div style={{...styles.section, ...styles.sectionBlue}}>
+                  <h3 style={{...styles.sectionTitle, ...styles.sectionTitleBlue}}>
+                    <Globe size={20} style={{ marginRight: '0.5rem' }} />
                     Content Strategy
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div style={styles.inputGrid2}>
                     <div>
-                      <label className="block text-sm font-medium text-blue-200 mb-2">Publication Target *</label>
+                      <label style={{...styles.label, ...styles.labelBlue}}>Publication Target *</label>
                       <select
                         value={formData.publication}
                         onChange={(e) => handlePublicationChange(e.target.value)}
-                        className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        style={styles.select}
                         required
                       >
                         <option value="">Select Publication</option>
@@ -313,25 +627,25 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-blue-200 mb-2">Primary Keyword *</label>
+                      <label style={{...styles.label, ...styles.labelBlue}}>Primary Keyword *</label>
                       <input
                         type="text"
                         value={formData.keyword}
                         onChange={(e) => setFormData(prev => ({ ...prev, keyword: e.target.value }))}
-                        className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        style={styles.input}
                         placeholder="Enter primary keyword"
                         required
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div style={styles.inputGrid2}>
                     <div>
-                      <label className="block text-sm font-medium text-blue-200 mb-2">Target Word Count *</label>
+                      <label style={{...styles.label, ...styles.labelBlue}}>Target Word Count *</label>
                       <select
                         value={formData.wordCountTarget}
                         onChange={(e) => setFormData(prev => ({ ...prev, wordCountTarget: parseInt(e.target.value) }))}
-                        className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        style={styles.select}
                         required
                       >
                         <option value={6000}>6,000+ Words</option>
@@ -342,12 +656,12 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-blue-200 mb-2">Affiliate Link *</label>
+                      <label style={{...styles.label, ...styles.labelBlue}}>Affiliate Link *</label>
                       <input
                         type="url"
                         value={formData.affiliateLink}
                         onChange={(e) => setFormData(prev => ({ ...prev, affiliateLink: e.target.value }))}
-                        className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        style={styles.input}
                         placeholder="https://example.com/affiliate"
                         required
                       />
@@ -355,85 +669,83 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
                   </div>
 
                   {formData.contentType && (
-                    <div className="mt-4">
-                      <div className="bg-green-500/20 rounded-lg p-3">
-                        <p className="text-green-200 text-sm">
-                          <CheckCircle className="inline h-4 w-4 mr-1" />
-                          Auto-selected: <strong>{formData.contentType}</strong> for {formData.publication}
-                        </p>
-                      </div>
+                    <div style={styles.successBox}>
+                      <p style={styles.successText}>
+                        <CheckCircle size={16} style={{ marginRight: '0.25rem' }} />
+                        Auto-selected: <strong>{formData.contentType}</strong> for {formData.publication}
+                      </p>
                     </div>
                   )}
                 </div>
 
                 {/* TIER 2: SOURCE INTELLIGENCE */}
-                <div className="bg-purple-500/20 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-purple-200 mb-4 flex items-center">
-                    <Brain className="h-5 w-5 mr-2" />
+                <div style={{...styles.section, ...styles.sectionPurple}}>
+                  <h3 style={{...styles.sectionTitle, ...styles.sectionTitlePurple}}>
+                    <Brain size={20} style={{ marginRight: '0.5rem' }} />
                     Source Intelligence (Optional)
                   </h3>
                   
                   <div>
-                    <label className="block text-sm font-medium text-purple-200 mb-2">Source URL</label>
+                    <label style={{...styles.label, ...styles.labelPurple}}>Source URL</label>
                     <input
                       type="url"
                       value={formData.sourceUrl}
                       onChange={(e) => setFormData(prev => ({ ...prev, sourceUrl: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      style={styles.input}
                       placeholder="https://competitor-analysis.com (optional)"
                     />
                   </div>
 
-                  <div className="mt-4">
-                    <label className="block text-sm font-medium text-purple-200 mb-2">Source Material</label>
+                  <div>
+                    <label style={{...styles.label, ...styles.labelPurple}}>Source Material</label>
                     <textarea
                       value={formData.sourceMaterial}
                       onChange={(e) => setFormData(prev => ({ ...prev, sourceMaterial: e.target.value }))}
-                      className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-purple-500 focus:border-transparent h-24 resize-none"
+                      style={styles.textarea}
                       placeholder="Additional context, research notes, or specific requirements... (optional)"
                     />
                   </div>
                 </div>
 
                 {/* TIER 3: CONTACT INFORMATION */}
-                <div className="bg-green-500/20 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-green-200 mb-4 flex items-center">
-                    <Users className="h-5 w-5 mr-2" />
+                <div style={{...styles.section, ...styles.sectionGreen}}>
+                  <h3 style={{...styles.sectionTitle, ...styles.sectionTitleGreen}}>
+                    <Users size={20} style={{ marginRight: '0.5rem' }} />
                     Contact Information
                   </h3>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div style={styles.inputGrid3}>
                     <div>
-                      <label className="block text-sm font-medium text-green-200 mb-2">Company Name *</label>
+                      <label style={{...styles.label, ...styles.labelGreen}}>Company Name *</label>
                       <input
                         type="text"
                         value={formData.companyName}
                         onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
-                        className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        style={styles.input}
                         placeholder="Company Name"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-green-200 mb-2">Email *</label>
+                      <label style={{...styles.label, ...styles.labelGreen}}>Email *</label>
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                        className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        style={styles.input}
                         placeholder="contact@company.com"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-green-200 mb-2">Phone *</label>
+                      <label style={{...styles.label, ...styles.labelGreen}}>Phone *</label>
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                        className="w-full px-4 py-3 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        style={styles.input}
                         placeholder="(555) 123-4567"
                         required
                       />
@@ -444,7 +756,10 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
                 <button
                   type="submit"
                   disabled={isGenerating}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-8 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    ...styles.submitButton,
+                    ...(isGenerating ? styles.submitButtonDisabled : {})
+                  }}
                 >
                   {isGenerating ? 'Generating Content...' : 'Generate Content'}
                 </button>
@@ -452,28 +767,32 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
             </div>
 
             {/* Results Panel */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl">
-              <h2 className="text-2xl font-bold text-white mb-6">Results & Analytics</h2>
+            <div style={styles.card}>
+              <h2 style={styles.cardTitle}>Results & Analytics</h2>
 
               {/* Multi-Agent Analysis Display */}
               {multiAgentAnalysis && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-blue-200 mb-4">Multi-Agent System Analysis</h3>
-                  <div className="bg-blue-500/20 rounded-xl p-4">
-                    <div className="text-center mb-4">
-                      <div className="text-3xl font-bold text-white">{multiAgentAnalysis.overallScore}/100</div>
-                      <div className="text-blue-200">Overall System Score</div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#93c5fd', marginBottom: '1rem' }}>
+                    Multi-Agent System Analysis
+                  </h3>
+                  <div style={{...styles.section, ...styles.sectionBlue}}>
+                    <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: 'white' }}>
+                        {multiAgentAnalysis.overallScore}/100
+                      </div>
+                      <div style={{ color: '#93c5fd' }}>Overall System Score</div>
                     </div>
                     
-                    <div className="grid grid-cols-1 gap-2">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {Object.entries(multiAgentAnalysis).map(([key, value]: [string, any]) => {
                         if (key === 'overallScore') return null;
                         return (
-                          <div key={key} className="flex justify-between items-center">
-                            <span className="text-blue-200 text-sm capitalize">
+                          <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: '#93c5fd', fontSize: '0.875rem' }}>
                               {key.replace(/Agent$/, '').replace(/([A-Z])/g, ' $1').trim()}
                             </span>
-                            <span className="text-white font-semibold">{value.score}/100</span>
+                            <span style={{ color: 'white', fontWeight: '600' }}>{value.score}/100</span>
                           </div>
                         );
                       })}
@@ -484,75 +803,99 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
 
               {/* Generation Results */}
               {isGenerating && (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-400 mx-auto mb-4"></div>
-                  <p className="text-blue-200">Multi-agent system analyzing and generating content...</p>
+                <div style={styles.loading}>
+                  <div style={styles.spinner}></div>
+                  <p style={styles.loadingText}>Multi-agent system analyzing and generating content...</p>
                 </div>
               )}
 
               {result && (
                 <div>
                   {/* Metrics Display */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-blue-500/20 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-white">{result.metrics.wordCount.toLocaleString()}</div>
-                      <div className="text-blue-200 text-sm">Words Generated</div>
-                      <div className={`text-sm font-medium ${result.metrics.wordCountAccuracy >= 90 ? 'text-green-400' : 'text-yellow-400'}`}>
+                  <div style={styles.metricsGrid}>
+                    <div style={{...styles.metricCard, ...styles.metricCardBlue}}>
+                      <div style={styles.metricValue}>{result.metrics.wordCount.toLocaleString()}</div>
+                      <div style={{...styles.metricLabel, color: '#93c5fd'}}>Words Generated</div>
+                      <div style={{
+                        ...styles.metricStatus,
+                        color: result.metrics.wordCountAccuracy >= 90 ? '#4ade80' : '#fbbf24'
+                      }}>
                         {result.metrics.wordCountAccuracy}% Accuracy
                       </div>
                     </div>
-                    <div className="bg-purple-500/20 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-white">{result.metrics.h2Count}</div>
-                      <div className="text-purple-200 text-sm">H2 Sections</div>
-                      <div className={`text-sm font-medium ${result.metrics.requirementsMet.structure ? 'text-green-400' : 'text-red-400'}`}>
+                    <div style={{...styles.metricCard, ...styles.metricCardPurple}}>
+                      <div style={styles.metricValue}>{result.metrics.h2Count}</div>
+                      <div style={{...styles.metricLabel, color: '#c4b5fd'}}>H2 Sections</div>
+                      <div style={{
+                        ...styles.metricStatus,
+                        color: result.metrics.requirementsMet.structure ? '#4ade80' : '#ef4444'
+                      }}>
                         {result.metrics.requirementsMet.structure ? 'Met' : 'Needs Work'}
                       </div>
                     </div>
-                    <div className="bg-green-500/20 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-white">{result.metrics.affiliateLinkCount}</div>
-                      <div className="text-green-200 text-sm">Affiliate Links</div>
-                      <div className={`text-sm font-medium ${result.metrics.requirementsMet.affiliateLinks ? 'text-green-400' : 'text-yellow-400'}`}>
+                    <div style={{...styles.metricCard, ...styles.metricCardGreen}}>
+                      <div style={styles.metricValue}>{result.metrics.affiliateLinkCount}</div>
+                      <div style={{...styles.metricLabel, color: '#86efac'}}>Affiliate Links</div>
+                      <div style={{
+                        ...styles.metricStatus,
+                        color: result.metrics.requirementsMet.affiliateLinks ? '#4ade80' : '#fbbf24'
+                      }}>
                         {result.metrics.requirementsMet.affiliateLinks ? 'Optimized' : 'Partial'}
                       </div>
                     </div>
-                    <div className="bg-orange-500/20 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-white">{result.metrics.generationAttempts}</div>
-                      <div className="text-orange-200 text-sm">Attempts</div>
-                      <div className="text-sm font-medium text-orange-400">
+                    <div style={{...styles.metricCard, ...styles.metricCardOrange}}>
+                      <div style={styles.metricValue}>{result.metrics.generationAttempts}</div>
+                      <div style={{...styles.metricLabel, color: '#fdba74'}}>Attempts</div>
+                      <div style={{...styles.metricStatus, color: '#fdba74'}}>
                         {result.success ? 'Success' : 'Partial'}
                       </div>
                     </div>
                   </div>
 
                   {/* Status Message */}
-                  <div className={`rounded-lg p-4 mb-6 ${result.success ? 'bg-green-500/20 text-green-200' : 'bg-yellow-500/20 text-yellow-200'}`}>
-                    <p className="font-medium">{result.message}</p>
+                  <div style={{
+                    borderRadius: '0.5rem',
+                    padding: '1rem',
+                    marginBottom: '1.5rem',
+                    background: result.success 
+                      ? 'rgba(34, 197, 94, 0.2)' 
+                      : 'rgba(251, 191, 36, 0.2)',
+                    color: result.success ? '#86efac' : '#fde68a'
+                  }}>
+                    <p style={{ fontWeight: '500' }}>{result.message}</p>
                   </div>
 
                   {/* Download Options */}
                   {result.content && (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-white">Download Options</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <h3 style={{
+                        fontSize: '1.125rem',
+                        fontWeight: '600',
+                        color: 'white',
+                        marginBottom: '1rem'
+                      }}>
+                        Download Options
+                      </h3>
+                      <div style={styles.downloadGrid}>
                         <button
                           onClick={() => downloadWordPress('html')}
-                          className="flex items-center justify-center px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                          style={{...styles.downloadButton, ...styles.downloadButtonBlue}}
                         >
-                          <Download className="h-5 w-5 mr-2" />
+                          <Download size={20} style={{ marginRight: '0.5rem' }} />
                           HTML Export
                         </button>
                         <button
                           onClick={() => downloadWordPress('gutenberg')}
-                          className="flex items-center justify-center px-4 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                          style={{...styles.downloadButton, ...styles.downloadButtonPurple}}
                         >
-                          <Download className="h-5 w-5 mr-2" />
+                          <Download size={20} style={{ marginRight: '0.5rem' }} />
                           Gutenberg
                         </button>
                         <button
                           onClick={() => downloadWordPress('classic')}
-                          className="flex items-center justify-center px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                          style={{...styles.downloadButton, ...styles.downloadButtonGreen}}
                         >
-                          <Download className="h-5 w-5 mr-2" />
+                          <Download size={20} style={{ marginRight: '0.5rem' }} />
                           Classic Editor
                         </button>
                       </div>
@@ -566,42 +909,46 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
 
         {/* Admin Controls Tab */}
         {activeTab === 'admin' && (
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-white mb-6">Admin Controls</h2>
+          <div style={{...styles.card, maxWidth: '1000px', margin: '0 auto'}}>
+            <h2 style={styles.cardTitle}>Admin Controls</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div style={styles.inputGrid2}>
               <div>
-                <h3 className="text-lg font-semibold text-blue-200 mb-4">Publication Settings</h3>
-                <div className="space-y-3">
-                  <div className="bg-blue-500/20 rounded-lg p-4">
-                    <h4 className="font-medium text-white">Globe Newswire</h4>
-                    <p className="text-blue-200 text-sm">Press Release format, formal tone</p>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#93c5fd', marginBottom: '1rem' }}>
+                  Publication Settings
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{...styles.section, ...styles.sectionBlue}}>
+                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Globe Newswire</h4>
+                    <p style={{ color: '#93c5fd', fontSize: '0.875rem', margin: 0 }}>Press Release format, formal tone</p>
                   </div>
-                  <div className="bg-blue-500/20 rounded-lg p-4">
-                    <h4 className="font-medium text-white">Newswire</h4>
-                    <p className="text-blue-200 text-sm">News Article format, journalistic tone</p>
+                  <div style={{...styles.section, ...styles.sectionBlue}}>
+                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Newswire</h4>
+                    <p style={{ color: '#93c5fd', fontSize: '0.875rem', margin: 0 }}>News Article format, journalistic tone</p>
                   </div>
-                  <div className="bg-blue-500/20 rounded-lg p-4">
-                    <h4 className="font-medium text-white">Our Sites</h4>
-                    <p className="text-blue-200 text-sm">Blog Post format, conversational tone</p>
+                  <div style={{...styles.section, ...styles.sectionBlue}}>
+                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Our Sites</h4>
+                    <p style={{ color: '#93c5fd', fontSize: '0.875rem', margin: 0 }}>Blog Post format, conversational tone</p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-purple-200 mb-4">System Configuration</h3>
-                <div className="space-y-3">
-                  <div className="bg-purple-500/20 rounded-lg p-4">
-                    <h4 className="font-medium text-white">API Status</h4>
-                    <p className="text-green-400 text-sm">✅ Claude API Connected</p>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#c4b5fd', marginBottom: '1rem' }}>
+                  System Configuration
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{...styles.section, ...styles.sectionPurple}}>
+                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>API Status</h4>
+                    <p style={{ color: '#4ade80', fontSize: '0.875rem', margin: 0 }}>✅ Claude API Connected</p>
                   </div>
-                  <div className="bg-purple-500/20 rounded-lg p-4">
-                    <h4 className="font-medium text-white">Multi-Agent System</h4>
-                    <p className="text-green-400 text-sm">✅ All 5 Agents Operational</p>
+                  <div style={{...styles.section, ...styles.sectionPurple}}>
+                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Multi-Agent System</h4>
+                    <p style={{ color: '#4ade80', fontSize: '0.875rem', margin: 0 }}>✅ All 5 Agents Operational</p>
                   </div>
-                  <div className="bg-purple-500/20 rounded-lg p-4">
-                    <h4 className="font-medium text-white">Word Count Enforcement</h4>
-                    <p className="text-green-400 text-sm">✅ Backend Validation Active</p>
+                  <div style={{...styles.section, ...styles.sectionPurple}}>
+                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Word Count Enforcement</h4>
+                    <p style={{ color: '#4ade80', fontSize: '0.875rem', margin: 0 }}>✅ Backend Validation Active</p>
                   </div>
                 </div>
               </div>
@@ -611,45 +958,83 @@ OVERALL SYSTEM SCORE: ${analysis.overallScore}/100
 
         {/* Analytics Tab */}
         {activeTab === 'analytics' && (
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 shadow-2xl max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-white mb-6">Analytics Dashboard</h2>
+          <div style={{...styles.card, maxWidth: '1000px', margin: '0 auto'}}>
+            <h2 style={styles.cardTitle}>Analytics Dashboard</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-2">System Performance</h3>
-                <div className="text-3xl font-bold text-blue-400 mb-1">95%</div>
-                <p className="text-blue-200 text-sm">Word Count Accuracy</p>
+            <div style={styles.inputGrid3}>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(37, 99, 235, 0.2) 100%)',
+                borderRadius: '0.75rem',
+                padding: '1.5rem'
+              }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', marginBottom: '0.5rem' }}>
+                  System Performance
+                </h3>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#60a5fa', marginBottom: '0.25rem' }}>95%</div>
+                <p style={{ color: '#93c5fd', fontSize: '0.875rem', margin: 0 }}>Word Count Accuracy</p>
               </div>
               
-              <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-2">Content Quality</h3>
-                <div className="text-3xl font-bold text-purple-400 mb-1">87/100</div>
-                <p className="text-purple-200 text-sm">Average Quality Score</p>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%)',
+                borderRadius: '0.75rem',
+                padding: '1.5rem'
+              }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', marginBottom: '0.5rem' }}>
+                  Content Quality
+                </h3>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#a78bfa', marginBottom: '0.25rem' }}>87/100</div>
+                <p style={{ color: '#c4b5fd', fontSize: '0.875rem', margin: 0 }}>Average Quality Score</p>
               </div>
               
-              <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-2">Generation Success</h3>
-                <div className="text-3xl font-bold text-green-400 mb-1">98%</div>
-                <p className="text-green-200 text-sm">Successful Generations</p>
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(21, 128, 61, 0.2) 100%)',
+                borderRadius: '0.75rem',
+                padding: '1.5rem'
+              }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', marginBottom: '0.5rem' }}>
+                  Generation Success
+                </h3>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#4ade80', marginBottom: '0.25rem' }}>98%</div>
+                <p style={{ color: '#86efac', fontSize: '0.875rem', margin: 0 }}>Successful Generations</p>
               </div>
             </div>
 
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-white mb-4">Recent Activity</h3>
-              <div className="space-y-3">
-                <div className="bg-white/5 rounded-lg p-4 flex justify-between items-center">
+            <div style={{ marginTop: '2rem' }}>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'white', marginBottom: '1rem' }}>
+                Recent Activity
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '0.5rem',
+                  padding: '1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
                   <div>
-                    <h4 className="font-medium text-white">Content Generated</h4>
-                    <p className="text-gray-300 text-sm">8,247 words • Globe Newswire • AI Technology</p>
+                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Content Generated</h4>
+                    <p style={{ color: '#d1d5db', fontSize: '0.875rem', margin: 0 }}>
+                      8,247 words • Globe Newswire • AI Technology
+                    </p>
                   </div>
-                  <div className="text-green-400 text-sm">Success</div>
+                  <div style={{ color: '#4ade80', fontSize: '0.875rem' }}>Success</div>
                 </div>
-                <div className="bg-white/5 rounded-lg p-4 flex justify-between items-center">
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  borderRadius: '0.5rem',
+                  padding: '1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
                   <div>
-                    <h4 className="font-medium text-white">Content Generated</h4>
-                    <p className="text-gray-300 text-sm">6,543 words • Our Sites • Digital Marketing</p>
+                    <h4 style={{ fontWeight: '500', color: 'white', margin: '0 0 0.25rem 0' }}>Content Generated</h4>
+                    <p style={{ color: '#d1d5db', fontSize: '0.875rem', margin: 0 }}>
+                      6,543 words • Our Sites • Digital Marketing
+                    </p>
                   </div>
-                  <div className="text-green-400 text-sm">Success</div>
+                  <div style={{ color: '#4ade80', fontSize: '0.875rem' }}>Success</div>
                 </div>
               </div>
             </div>
