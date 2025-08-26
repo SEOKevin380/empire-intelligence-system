@@ -60,7 +60,7 @@ export default async function handler(req, res) {
     const finalKeywords = keywords;
     const finalTargetUrl = targetUrl || 'https://example.com';
 
-    // Model configuration
+    // Model configuration with current Claude model names
     const modelConfig = {
       'efficient': {
         model: 'claude-3-haiku-20240307',
@@ -68,12 +68,12 @@ export default async function handler(req, res) {
         cost: 0.06
       },
       'standard': {
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-3-5-sonnet-20241022',  // Updated to current model
         maxTokens: 3000,
         cost: 0.15
       },
       'premium': {
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-5-sonnet-20241022',  // Using latest stable model
         maxTokens: 4000,
         cost: 0.40
       }
