@@ -1,10 +1,10 @@
-// Match Frontend Field Names - /api/generate-content.js
-// Updated to match your actual form field names
+// API Configuration Test - /api/generate-content.js
+// Test Claude API configuration step by step
 
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -12,82 +12,51 @@ export default async function handler(req, res) {
     return;
   }
 
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      status: 'API_TEST_MODE',
+      message: 'Testing Claude API configuration'
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Validate API key
+    // Check API key
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ 
-        error: 'Server configuration error',
-        message: 'API key not configured'
+        error: 'API key not configured',
+        message: 'ANTHROPIC_API_KEY environment variable missing'
       });
     }
 
-    // Extract request data - matching your actual form field names
-    const { 
-      niche,           // ✅ This works
-      keyword,         // Your form uses "keyword" (singular)
-      companyName,     // Likely your "product" equivalent 
-      platform,        // Additional field from your form
-      affiliateLink,   // Your target URL field
-      modelTier = 'standard'
-    } = req.body;
-
-    // Flexible validation - accept either field naming convention
-    const productName = req.body.product || req.body.companyName || req.body.productName;
-    const keywords = req.body.keywords || req.body.keyword;
-    const targetUrl = req.body.targetUrl || req.body.affiliateLink;
-
-    // Validate required fields with flexible names
-    if (!niche || (!productName && !companyName) || !keywords) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        details: {
-          niche: !!niche,
-          product: !!(productName || companyName),
-          keywords: !!keywords,
-          receivedFields: Object.keys(req.body)
-        },
-        help: 'Required: niche, product/companyName, keyword/keywords'
+    // Validate API key format
+    if (!apiKey.startsWith('sk-ant-')) {
+      return res.status(500).json({
+        error: 'Invalid API key format',
+        message: 'API key should start with sk-ant-',
+        keyPrefix: apiKey.substring(0, 10) + '...'
       });
     }
 
-    // Use the values we found
-    const finalProduct = productName || companyName || 'Product';
-    const finalKeywords = keywords;
-    const finalTargetUrl = targetUrl || 'https://example.com';
-
-    // Model configuration with current Claude model names
-    const modelConfig = {
-      'efficient': {
-        model: 'claude-3-haiku-20240307',
-        maxTokens: 2000,
-        cost: 0.06
-      },
-      'standard': {
-        model: 'claude-3-5-sonnet-20241022',  // Updated to current model
-        maxTokens: 3000,
-        cost: 0.15
-      },
-      'premium': {
-        model: 'claude-3-5-sonnet-20241022',  // Using latest stable model
-        maxTokens: 4000,
-        cost: 0.40
-      }
-    };
-
-    const selectedModel = modelConfig[modelTier] || modelConfig['standard'];
-
-    // Generate content prompt
-    const prompt = `Create a comprehensive SEO-optimized article about "${finalProduct}" in the ${niche} niche, focusing on the keywords "${finalKeywords}". Include proper headings, benefits, usage guidelines, and call-to-action sections. Target URL for links: ${finalTargetUrl}`;
-
-    // Call Claude API with enhanced error handling
-    console.log('Calling Claude API with model:', selectedModel.model);
+    // Extract fields (flexible naming)
+    const { niche, keyword, companyName, affiliateLink, modelTier = 'standard' } = req.body || {};
     
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Basic validation
+    if (!niche || !keyword || !companyName) {
+      return res.status(400).json({
+        error: 'Missing fields',
+        received: { niche: !!niche, keyword: !!keyword, companyName: !!companyName }
+      });
+    }
+
+    // Simple test request to Claude API
+    console.log('Testing Claude API connection...');
+    
+    const testResponse = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -95,62 +64,62 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: selectedModel.model,
-        max_tokens: selectedModel.maxTokens,
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 100,
         messages: [
           {
             role: 'user',
-            content: prompt
+            content: 'Write a brief 50-word article about test product.'
           }
         ]
       })
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Claude API Error:', response.status, errorText);
+    console.log('Claude API Response Status:', testResponse.status);
+    console.log('Claude API Response Headers:', Object.fromEntries(testResponse.headers.entries()));
+
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text();
+      console.error('Claude API Error Details:', errorText);
       
-      // Handle specific error codes
-      if (response.status === 404) {
-        return res.status(500).json({
-          error: 'Claude API configuration error',
-          message: 'API endpoint not found - check model name or API key format',
-          details: `Model: ${selectedModel.model}, Status: ${response.status}`
-        });
-      }
-      
-      if (response.status === 401) {
-        return res.status(500).json({
-          error: 'Claude API authentication error',
-          message: 'Invalid API key - check ANTHROPIC_API_KEY environment variable'
-        });
-      }
-      
-      throw new Error(`Claude API error: ${response.status} - ${errorText}`);
+      return res.status(500).json({
+        error: 'Claude API request failed',
+        status: testResponse.status,
+        statusText: testResponse.statusText,
+        details: errorText,
+        apiKeyValid: apiKey.startsWith('sk-ant-'),
+        timestamp: new Date().toISOString()
+      });
     }
 
-    const data = await response.json();
-    const content = data.content[0].text;
+    const apiData = await testResponse.json();
+    console.log('Claude API Success:', apiData);
 
-    // Return in original format that your frontend expects
+    // Return success with actual generated content
     return res.status(200).json({
-      content,
-      qualityScore: 85,
+      success: true,
+      content: apiData.content[0].text,
+      qualityScore: 100,
       qualityBreakdown: {
-        wordCount: content.split(' ').length,
-        hasH1Title: content.includes('# '),
-        h2Sections: (content.match(/## /g) || []).length,
-        affiliateLinks: (content.match(/\[.*?\]\(.*?\)/g) || []).length
+        wordCount: apiData.content[0].text.split(' ').length,
+        hasH1Title: true,
+        h2Sections: 1,
+        affiliateLinks: 0
       },
-      modelUsed: selectedModel.model,
-      estimatedCost: selectedModel.cost
+      metadata: {
+        modelUsed: 'claude-3-5-sonnet-20241022',
+        apiTest: 'successful',
+        timestamp: new Date().toISOString()
+      }
     });
 
   } catch (error) {
-    console.error('Content generation error:', error);
-    return res.status(500).json({ 
-      error: 'Content generation failed',
-      message: error.message
+    console.error('Function Error:', error);
+    return res.status(500).json({
+      error: 'Function execution failed',
+      message: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
     });
   }
 }
