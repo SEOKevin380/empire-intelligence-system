@@ -23,6 +23,12 @@ const App: React.FC = () => {
   const [qualityBreakdown, setQualityBreakdown] = useState<Record<string, number>>({});
   const [disclaimers, setDisclaimers] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+
+  const addDebugLog = (message: string) => {
+    console.log(message);
+    setDebugLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
 
   const nicheConfig = {
     "health-supplements": {
@@ -90,21 +96,70 @@ const App: React.FC = () => {
     }
   };
 
+  // Direct API test function
+  const testApiDirectly = async () => {
+    addDebugLog("=== TESTING API DIRECTLY ===");
+    setDebugLogs([]);
+    
+    try {
+      const testPayload = {
+        niche: 'health-supplements',
+        keyword: 'test keyword',
+        sourceMaterial: 'test source material',
+        modelTier: 'efficient'
+      };
+      
+      addDebugLog(`Making direct API call with payload: ${JSON.stringify(testPayload)}`);
+      
+      const response = await fetch('/api/generate-content', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(testPayload)
+      });
+
+      addDebugLog(`Direct API test - Status: ${response.status}`);
+      addDebugLog(`Direct API test - OK: ${response.ok}`);
+      addDebugLog(`Direct API test - Headers: ${JSON.stringify(Object.fromEntries(response.headers))}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        addDebugLog(`Direct API test - Error response: ${errorText}`);
+        return;
+      }
+
+      const result = await response.json();
+      addDebugLog(`Direct API test - Success: ${JSON.stringify(result)}`);
+      addDebugLog(`Direct API test - Content length: ${result.content?.length || 'No content'}`);
+      
+    } catch (error: any) {
+      addDebugLog(`Direct API test - Exception: ${error.message}`);
+      addDebugLog(`Direct API test - Stack: ${error.stack}`);
+    }
+  };
+
   const handleSubmit = async () => {
+    addDebugLog("=== FORM SUBMISSION DEBUG ===");
+    setDebugLogs([]);
+    
     if (!niche || !contentType || !platform) {
       setError("Please select niche, content type, and platform");
+      addDebugLog("Validation failed: Missing required selections");
       return;
     }
 
     if (!keyword.trim() || !sourceMaterial.trim()) {
       setError("Keyword and source material are required");
+      addDebugLog("Validation failed: Missing keyword or source material");
       return;
     }
 
     if (contentType === "affiliate" && !affiliateLink.trim()) {
       setError("Affiliate link is required for affiliate content");
+      addDebugLog("Validation failed: Missing affiliate link");
       return;
     }
+
+    addDebugLog("All validations passed, starting API call");
 
     setIsLoading(true);
     setError("");
@@ -114,69 +169,105 @@ const App: React.FC = () => {
     setDisclaimers([]);
 
     try {
+      const requestPayload = {
+        niche,
+        contentType,
+        platform,
+        sourceMaterial,
+        targetAudience: targetAudience || "General audience",
+        wordCount: wordCount || nicheConfig[niche as keyof typeof nicheConfig].targetWords,
+        additionalRequirements: additionalRequirements || "Follow industry best practices",
+        keyword,
+        affiliateLink,
+        companyName,
+        email,
+        phone,
+        authorCredentials,
+        modelTier
+      };
+
+      addDebugLog(`Request payload: ${JSON.stringify(requestPayload, null, 2)}`);
+      addDebugLog("Making fetch request to /api/generate-content");
+
       const response = await fetch("/api/generate-content", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          niche,
-          contentType,
-          platform,
-          sourceMaterial,
-          targetAudience: targetAudience || "General audience",
-          wordCount: wordCount || nicheConfig[niche as keyof typeof nicheConfig].targetWords,
-          additionalRequirements: additionalRequirements || "Follow industry best practices",
-          keyword,
-          affiliateLink,
-          companyName,
-          email,
-          phone,
-          authorCredentials,
-          modelTier
-        })
+        body: JSON.stringify(requestPayload)
       });
 
-      console.log("Response status:", response.status);
-      console.log("Response ok:", response.ok);
+      addDebugLog(`Response status: ${response.status}`);
+      addDebugLog(`Response ok: ${response.ok}`);
+      addDebugLog(`Response headers: ${JSON.stringify(Object.fromEntries(response.headers))}`);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("API Error Response:", errorText);
+        let errorText;
+        try {
+          errorText = await response.text();
+          addDebugLog(`Error response text: ${errorText}`);
+        } catch (textError) {
+          addDebugLog(`Could not read error response: ${textError}`);
+          errorText = `HTTP ${response.status} - ${response.statusText}`;
+        }
         throw new Error(`API Error ${response.status}: ${errorText}`);
       }
 
-      const result = await response.json();
-      console.log("Parsed result:", result);
+      let result;
+      try {
+        result = await response.json();
+        addDebugLog(`Parsed result: ${JSON.stringify(result, null, 2)}`);
+      } catch (jsonError) {
+        addDebugLog(`JSON parsing error: ${jsonError}`);
+        throw new Error("Invalid JSON response from API");
+      }
 
       if (!result || typeof result !== 'object') {
+        addDebugLog(`Invalid result type: ${typeof result}`);
         throw new Error("Invalid response format from API");
       }
 
-      if (!result.content) {
-        console.error("API result missing content:", result);
+      // Check different possible response formats
+      if (result.success === false) {
+        addDebugLog(`API returned success=false: ${result.message}`);
+        throw new Error(result.message || "API returned unsuccessful response");
+      }
+
+      if (result.error) {
+        addDebugLog(`API returned error: ${result.error}`);
+        throw new Error(result.error);
+      }
+
+      // Handle different content field possibilities
+      let content = result.content || result.data?.content || result.generatedContent;
+      
+      if (!content) {
+        addDebugLog("No content found in any expected field");
+        addDebugLog(`Available fields: ${Object.keys(result).join(', ')}`);
         throw new Error("API returned success but no content generated");
       }
 
       const extractedData = {
-        content: result.content || "No content generated",
-        qualityScore: result.qualityScore || 0,
-        qualityBreakdown: result.qualityBreakdown || {},
-        modelUsed: result.modelUsed || "unknown",
-        estimatedCost: result.estimatedCost || 0
+        content: content,
+        qualityScore: result.qualityScore || result.data?.qualityScore || 0,
+        qualityBreakdown: result.qualityBreakdown || result.data?.qualityBreakdown || {},
+        modelUsed: result.modelUsed || result.data?.modelUsed || "unknown",
+        estimatedCost: result.estimatedCost || result.data?.estimatedCost || 0
       };
 
-      console.log("Successfully extracted data:", extractedData);
+      addDebugLog("Successfully extracted data");
+      addDebugLog(`Content length: ${extractedData.content.length}`);
+      addDebugLog(`Quality score: ${extractedData.qualityScore}`);
 
       setGeneratedContent(extractedData.content);
       setQualityScore(extractedData.qualityScore);
       setQualityBreakdown(extractedData.qualityBreakdown);
-      setDisclaimers(result.disclaimers || []);
+      setDisclaimers(result.disclaimers || result.data?.disclaimers || []);
       setError("");
 
     } catch (error: any) {
-      console.error("Form submission error:", error);
-      console.error("Error stack:", error.stack);
+      addDebugLog(`Form submission error: ${error.message}`);
+      addDebugLog(`Error stack: ${error.stack}`);
 
       let userFriendlyError = "Content generation failed";
 
@@ -184,7 +275,7 @@ const App: React.FC = () => {
         userFriendlyError = "Network error - please check your connection";
       } else if (error.message.includes("API Error")) {
         userFriendlyError = `Server error: ${error.message}`;
-      } else if (error.message.includes("Invalid response")) {
+      } else if (error.message.includes("Invalid response") || error.message.includes("JSON")) {
         userFriendlyError = "Server returned invalid response format";
       } else if (error.message.includes("no content")) {
         userFriendlyError = "API succeeded but generated no content";
@@ -193,9 +284,10 @@ const App: React.FC = () => {
       }
 
       setError(userFriendlyError);
-      console.error("USER FRIENDLY ERROR:", userFriendlyError);
+      addDebugLog(`USER FRIENDLY ERROR: ${userFriendlyError}`);
     } finally {
       setIsLoading(false);
+      addDebugLog("Form submission completed");
     }
   };
 
@@ -221,6 +313,53 @@ const App: React.FC = () => {
         <div style={{ fontSize: "16px", opacity: 0.8 }}>
           Choose Your AI Model • Optimize Cost vs Quality • Production Ready
         </div>
+      </div>
+
+      {/* Debug Section */}
+      <div style={{ backgroundColor: "#fff", padding: "20px", borderRadius: "10px", marginBottom: "20px", border: "3px solid #e74c3c" }}>
+        <h3 style={{ color: "#e74c3c", marginBottom: "15px" }}>🔧 DEBUG TOOLS - Find The Exact Problem</h3>
+        <div style={{ marginBottom: "15px" }}>
+          <button
+            onClick={testApiDirectly}
+            style={{
+              backgroundColor: "#e74c3c",
+              color: "white",
+              padding: "15px 30px",
+              borderRadius: "8px",
+              border: "none",
+              fontSize: "16px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              marginRight: "10px"
+            }}
+          >
+            🔍 TEST API DIRECTLY
+          </button>
+          <span style={{ color: "#666", fontSize: "14px" }}>
+            Click this first to test if your API is working at all
+          </span>
+        </div>
+        
+        {/* Debug Logs */}
+        {debugLogs.length > 0 && (
+          <div style={{
+            backgroundColor: "#2c3e50",
+            color: "#ecf0f1",
+            padding: "15px",
+            borderRadius: "8px",
+            fontSize: "12px",
+            fontFamily: "monospace",
+            maxHeight: "300px",
+            overflowY: "auto"
+          }}>
+            <strong>DEBUG LOGS:</strong><br />
+            {debugLogs.map((log, index) => (
+              <div key={index} style={{ marginBottom: "2px" }}>
+                {log}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Error Display */}
@@ -331,144 +470,16 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Secondary Settings */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px", marginBottom: "25px" }}>
-          <div>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#2c3e50" }}>
-              Publication Platform:
-            </label>
-            <select
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "8px",
-                border: "2px solid #ddd",
-                fontSize: "16px"
-              }}
-            >
-              <option value="house-domain">House Domain (No Restrictions)</option>
-              <option value="sponsored-post">Sponsored Post (Minimal)</option>
-              <option value="newswire">Newswire.com (Medium Compliance)</option>
-              <option value="globe-newswire">Globe Newswire (High Compliance)</option>
-            </select>
-          </div>
-
-          {contentType === "affiliate" && (
-            <div>
-              <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#2c3e50" }}>
-                Affiliate Link: <span style={{ color: "#e74c3c" }}>*Required</span>
-              </label>
-              <input
-                type="url"
-                value={affiliateLink}
-                onChange={(e) => setAffiliateLink(e.target.value)}
-                placeholder="https://affiliate-link.com"
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  borderRadius: "8px",
-                  border: "2px solid #ddd",
-                  fontSize: "16px"
-                }}
-              />
-            </div>
-          )}
-
-          <div>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#2c3e50" }}>
-              Source URL:
-            </label>
-            <input
-              type="url"
-              value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder="https://source-url.com"
-              style={{
-                width: "100%",
-                padding: "12px",
-                borderRadius: "8px",
-                border: "2px solid #ddd",
-                fontSize: "16px"
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Company Information */}
-        <div style={{ backgroundColor: "#f8f9fa", padding: "20px", borderRadius: "10px", marginBottom: "25px" }}>
-          <h3 style={{ color: "#495057", marginBottom: "15px" }}>Company & Author Information</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "15px" }}>
-            <input
-              type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Company Name"
-              style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ced4da",
-                fontSize: "14px"
-              }}
-            />
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ced4da",
-                fontSize: "14px"
-              }}
-            />
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Phone"
-              style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ced4da",
-                fontSize: "14px"
-              }}
-            />
-            <input
-              type="text"
-              value={authorCredentials}
-              onChange={(e) => setAuthorCredentials(e.target.value)}
-              placeholder="Author Credentials"
-              style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ced4da",
-                fontSize: "14px"
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Source Material */}
+        {/* Source Material - Simplified for testing */}
         <div style={{ backgroundColor: "#fff3e0", padding: "25px", borderRadius: "10px", marginBottom: "25px", border: "3px solid #ff9800" }}>
-          <h3 style={{ color: "#e65100", marginBottom: "15px" }}>Source Material (Required for Factual Accuracy)</h3>
+          <h3 style={{ color: "#e65100", marginBottom: "15px" }}>Source Material (Required for Testing)</h3>
           <textarea
             value={sourceMaterial}
             onChange={(e) => setSourceMaterial(e.target.value)}
-            placeholder={`PASTE COMPLETE SOURCE MATERIAL HERE:
-
-SUPPORTED NICHES:
-- Health & Supplements: Product specs, clinical studies, ingredients, benefits
-- Technology: Features, specifications, user guides, reviews, comparisons
-- Finance: Terms, rates, regulations, risk disclosures, analysis
-- E-commerce: Product details, pricing, comparisons, testimonials, reviews
-
-Paste all relevant source material to ensure 100% factual accuracy in the generated content.`}
+            placeholder="For testing, just paste any text here - product info, article content, etc."
             style={{
               width: "100%",
-              minHeight: "200px",
+              minHeight: "100px",
               padding: "15px",
               borderRadius: "8px",
               border: "2px solid #ff9800",
@@ -480,73 +491,27 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
           />
         </div>
 
-        {/* Optional Settings */}
-        <div style={{ backgroundColor: "#e8f5e8", padding: "20px", borderRadius: "10px", marginBottom: "25px" }}>
-          <h3 style={{ color: "#2e7d32", marginBottom: "15px" }}>Optional Settings</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "15px" }}>
+        {/* Affiliate Link - Only if affiliate selected */}
+        {contentType === "affiliate" && (
+          <div style={{ marginBottom: "25px" }}>
+            <label style={{ display: "block", marginBottom: "8px", fontWeight: "bold", color: "#2c3e50" }}>
+              Affiliate Link: <span style={{ color: "#e74c3c" }}>*Required for Affiliate Content</span>
+            </label>
             <input
-              type="text"
-              value={targetAudience}
-              onChange={(e) => setTargetAudience(e.target.value)}
-              placeholder="Target Audience (optional)"
+              type="url"
+              value={affiliateLink}
+              onChange={(e) => setAffiliateLink(e.target.value)}
+              placeholder="https://your-affiliate-link.com"
               style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ced4da",
-                fontSize: "14px"
-              }}
-            />
-            <input
-              type="text"
-              value={wordCount}
-              onChange={(e) => setWordCount(e.target.value)}
-              placeholder="Word Count (optional)"
-              style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ced4da",
-                fontSize: "14px"
-              }}
-            />
-            <input
-              type="text"
-              value={additionalRequirements}
-              onChange={(e) => setAdditionalRequirements(e.target.value)}
-              placeholder="Additional Requirements (optional)"
-              style={{
-                padding: "10px",
-                borderRadius: "6px",
-                border: "1px solid #ced4da",
-                fontSize: "14px"
+                width: "100%",
+                padding: "12px",
+                borderRadius: "8px",
+                border: "2px solid #ddd",
+                fontSize: "16px"
               }}
             />
           </div>
-        </div>
-
-        {/* Platform Information */}
-        <div style={{ backgroundColor: "#e3f2fd", padding: "15px", borderRadius: "8px", marginBottom: "25px", border: "2px solid #2196f3" }}>
-          <h4 style={{ color: "#1565c0", marginBottom: "10px" }}>
-            {platformConfig[platform as keyof typeof platformConfig].name} - Compliance Level: {platformConfig[platform as keyof typeof platformConfig].compliance}
-          </h4>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", fontSize: "14px" }}>
-            <div>
-              <strong style={{ color: "#1976d2" }}>Restrictions:</strong>
-              <ul style={{ margin: "5px 0 0 20px", color: "#1976d2" }}>
-                {platformConfig[platform as keyof typeof platformConfig].restrictions.map((restriction, index) => (
-                  <li key={index}>{restriction}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <strong style={{ color: "#1976d2" }}>Requirements:</strong>
-              <ul style={{ margin: "5px 0 0 20px", color: "#1976d2" }}>
-                {platformConfig[platform as keyof typeof platformConfig].requirements.map((requirement, index) => (
-                  <li key={index}>{requirement}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
+        )}
 
         {/* Submit Button */}
         <button
@@ -561,8 +526,7 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
             fontSize: "18px",
             fontWeight: "bold",
             cursor: isLoading || !keyword.trim() || !sourceMaterial.trim() || (contentType === "affiliate" && !affiliateLink.trim()) ? "not-allowed" : "pointer",
-            width: "100%",
-            background: isLoading || !keyword.trim() || !sourceMaterial.trim() || (contentType === "affiliate" && !affiliateLink.trim()) ? "#95a5a6" : "linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)"
+            width: "100%"
           }}
         >
           {isLoading 
@@ -571,142 +535,32 @@ Paste all relevant source material to ensure 100% factual accuracy in the genera
               ? "Keyword & Source Material Required" 
               : contentType === "affiliate" && !affiliateLink.trim() 
                 ? "Affiliate Link Required" 
-                : `Generate Professional Content (${modelTier} model)`
+                : `🚀 Generate Professional Content (${modelTier} model)`
           }
         </button>
       </div>
 
-      {/* Quality Score Display */}
-      {qualityScore > 0 && (
-        <div style={{
-          backgroundColor: qualityScore >= 85 ? "#d4edda" : qualityScore >= 70 ? "#d1ecf1" : "#fff3cd",
-          padding: "25px",
-          borderRadius: "15px",
-          border: qualityScore >= 85 ? "3px solid #27ae60" : qualityScore >= 70 ? "3px solid #17a2b8" : "3px solid #ffc107",
-          marginBottom: "25px"
-        }}>
-          <h3 style={{ color: qualityScore >= 85 ? "#155724" : qualityScore >= 70 ? "#0c5460" : "#856404", marginBottom: "15px" }}>
-            Content Quality Score: {qualityScore}/100
-            {qualityScore >= 85 && " - PRODUCTION READY!"}
-            {qualityScore >= 70 && qualityScore < 85 && " - GOOD QUALITY"}
-          </h3>
-          <div style={{ width: "100%", backgroundColor: "#e9ecef", borderRadius: "10px", overflow: "hidden", marginBottom: "15px" }}>
-            <div style={{
-              width: `${qualityScore}%`,
-              backgroundColor: qualityScore >= 85 ? "#28a745" : qualityScore >= 70 ? "#17a2b8" : "#ffc107",
-              height: "20px",
-              transition: "width 0.3s ease"
-            }} />
-          </div>
-          {Object.keys(qualityBreakdown).length > 0 && (
-            <div style={{ fontSize: "14px", color: "#666" }}>
-              <strong>Quality Breakdown:</strong>
-              {Object.entries(qualityBreakdown).map(([key, value]) => (
-                <span key={key} style={{ marginLeft: "10px" }}>
-                  {key}: {Math.round(value)}/100
-                </span>
-              ))}
-            </div>
-          )}
-          <div style={{ fontSize: "14px", color: "#666", marginTop: "10px" }}>
-            Niche: {nicheConfig[niche as keyof typeof nicheConfig].name} | Platform: {platformConfig[platform as keyof typeof platformConfig].name} | Model: {modelTier} | Words: {generatedContent.split(' ').length}
-          </div>
-        </div>
-      )}
-
-      {/* Disclaimers */}
-      {disclaimers.length > 0 && (
-        <div style={{ backgroundColor: "#fff3cd", padding: "20px", borderRadius: "10px", marginBottom: "25px", border: "2px solid #ffc107" }}>
-          <h3 style={{ color: "#856404", marginBottom: "15px" }}>Compliance Disclaimers</h3>
-          {disclaimers.map((disclaimer, index) => (
-            <div key={index} style={{ backgroundColor: "#fff", padding: "10px", borderRadius: "5px", marginBottom: "10px", fontSize: "14px", color: "#721c24" }}>
-              {disclaimer}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Generated Content */}
+      {/* Generated Content Display */}
       {generatedContent && (
-        <div style={{ backgroundColor: "#fff", padding: "30px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.1)", marginBottom: "25px" }}>
-          <h3 style={{ color: "#2c3e50", marginBottom: "20px" }}>
-            Generated Professional Content
-            <span style={{ fontSize: "16px", color: "#666", marginLeft: "10px" }}>
-              ({nicheConfig[niche as keyof typeof nicheConfig].name} - {modelTier} model)
-            </span>
+        <div style={{ backgroundColor: "#d4edda", padding: "25px", borderRadius: "15px", border: "3px solid #27ae60", marginBottom: "25px" }}>
+          <h3 style={{ color: "#155724", marginBottom: "15px" }}>
+            ✅ SUCCESS! Generated Professional Content ({generatedContent.split(' ').length} words)
           </h3>
           <div style={{
-            backgroundColor: "#f8f9fa",
-            padding: "25px",
-            borderRadius: "10px",
-            fontFamily: "Georgia, serif",
-            lineHeight: "1.6",
-            maxHeight: "600px",
+            backgroundColor: "#fff",
+            padding: "20px",
+            borderRadius: "8px",
+            maxHeight: "400px",
             overflowY: "auto",
-            border: "1px solid #dee2e6"
+            fontFamily: "Georgia, serif",
+            lineHeight: "1.6"
           }}>
-            <pre style={{ whiteSpace: "pre-wrap", fontFamily: "Georgia, serif", color: "#333" }}>
+            <pre style={{ whiteSpace: "pre-wrap", fontFamily: "inherit" }}>
               {generatedContent}
             </pre>
           </div>
-          <div style={{ marginTop: "20px", textAlign: "center" }}>
-            <button
-              onClick={() => navigator.clipboard.writeText(generatedContent)}
-              style={{
-                backgroundColor: "#17a2b8",
-                color: "white",
-                padding: "12px 25px",
-                borderRadius: "8px",
-                border: "none",
-                fontSize: "16px",
-                fontWeight: "bold",
-                cursor: "pointer",
-                marginRight: "15px"
-              }}
-            >
-              Copy Content
-            </button>
-            <button
-              onClick={() => {
-                const blob = new Blob([generatedContent], { type: "text/plain" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${keyword.replace(/\s+/g, "-")}-${niche}-${modelTier}.txt`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-              }}
-              style={{
-                backgroundColor: "#28a745",
-                color: "white",
-                padding: "12px 25px",
-                borderRadius: "8px",
-                border: "none",
-                fontSize: "16px",
-                fontWeight: "bold",
-                cursor: "pointer"
-              }}
-            >
-              Download Content
-            </button>
-          </div>
         </div>
       )}
-
-      {/* Footer */}
-      <div style={{ backgroundColor: "#fff", padding: "25px", borderRadius: "15px", boxShadow: "0 10px 30px rgba(0,0,0,0.1)", borderLeft: "5px solid #17a2b8" }}>
-        <h3 style={{ color: "#17a2b8", marginBottom: "15px" }}>EMPIRE INTELLIGENCE SYSTEM - AI MODEL SELECTION</h3>
-        <div style={{ color: "#0c5460" }}>
-          <p><strong>✅ Multi-Model Support:</strong> Choose between Efficient, Standard, and Premium AI models</p>
-          <p><strong>✅ Cost Optimization:</strong> Balance quality and cost based on content importance</p>
-          <p><strong>✅ Quality Controls:</strong> Comprehensive scoring and validation across all models</p>
-          <p><strong>✅ Professional Compliance:</strong> YMYL, FTC, and platform-specific requirements</p>
-          <p><strong>✅ Production Ready:</strong> Scalable architecture with model selection flexibility</p>
-          <p><strong>✅ Team Friendly:</strong> Clear model options with cost and speed indicators</p>
-        </div>
-      </div>
     </div>
   );
 };
