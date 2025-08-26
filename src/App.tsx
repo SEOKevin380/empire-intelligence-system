@@ -553,7 +553,7 @@ export default function App() {
 
             {/* Generate Button */}
             <button
-              type="submit"
+              onClick={handleSubmit}
               disabled={isLoading || !validation.publication || !validation.keyword || !validation.sourceMaterial || !validation.contact}
               style={{
                 width: '100%',
