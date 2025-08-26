@@ -1,5 +1,5 @@
-// Frontend Compatible Debugger - /api/generate-content.js
-// Returns the exact format your frontend expects
+// Complete Response Format - /api/generate-content.js
+// Returns ALL expected fields to prevent undefined errors
 
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,66 +12,84 @@ export default function handler(req, res) {
 
   if (req.method === 'GET') {
     return res.status(200).json({
-      status: 'DEBUGGER_ONLINE',
-      message: 'Ready to debug your form submission'
+      status: 'EMPIRE_INTELLIGENCE_ONLINE',
+      message: 'SEO content generation API ready',
+      version: 'V16.1'
     });
   }
 
   if (req.method === 'POST') {
-    // Return the exact response format your frontend expects for successful content generation
-    const bodyData = req.body || {};
+    const { niche, product, keywords, modelTier = 'standard', targetUrl } = req.body || {};
     
-    // Extract fields exactly as your frontend sends them
-    const { niche, product, keywords, modelTier, targetUrl } = bodyData;
-    
-    return res.status(200).json({
-      success: true,
-      content: `# DEBUG REPORT - Form Data Analysis
+    // Create debug content that shows what was received
+    const debugContent = `# Debug: Form Data Analysis
 
-## Field Status Check
-- **Niche**: ${niche ? `✅ "${niche}"` : '❌ Missing'}
-- **Product**: ${product ? `✅ "${product}"` : '❌ Missing'}  
-- **Keywords**: ${keywords ? `✅ "${keywords}"` : '❌ Missing'}
-- **Model Tier**: ${modelTier || 'standard'}
+## Received Data:
+- **Niche**: ${niche || 'NOT RECEIVED'}
+- **Product**: ${product || 'NOT RECEIVED'} 
+- **Keywords**: ${keywords || 'NOT RECEIVED'}
+- **Model Tier**: ${modelTier}
 - **Target URL**: ${targetUrl || 'Not provided'}
 
-## Raw Request Data
-\`\`\`json
-${JSON.stringify(bodyData, null, 2)}
-\`\`\`
+## Field Status:
+${niche ? '✅' : '❌'} Niche field
+${product ? '✅' : '❌'} Product field  
+${keywords ? '✅' : '❌'} Keywords field
 
-## All Field Keys Received
-${Object.keys(bodyData).map(key => `- ${key}: ${typeof bodyData[key]} = "${bodyData[key]}"`).join('\n')}
+## Next Steps:
+${!product || !keywords ? 
+  'Fix missing fields in your form, then we can enable full content generation!' :
+  'All fields received! Ready to enable Claude API content generation.'}
 
-## Diagnosis
-${!product && !keywords ? 'ISSUE: Both product and keywords are missing!' :
-  !product ? 'ISSUE: Product field is missing or empty!' :
-  !keywords ? 'ISSUE: Keywords field is missing or empty!' :
-  'SUCCESS: All required fields are present!'}
+This is a debug response to identify the form data issue.`;
 
-This debug report shows exactly what your form is sending to the API.`,
-      
-      qualityScore: 100,
+    // Return complete response with ALL expected fields
+    return res.status(200).json({
+      success: true,
+      content: debugContent,
+      qualityScore: 75,
       qualityBreakdown: {
-        wordCount: 150,
+        wordCount: debugContent.split(' ').length || 0,
         targetWords: 2000,
         hasH1Title: true,
         h2Sections: 3,
         h3Sections: 0,
         affiliateLinks: 0,
-        boldPhrases: 5,
-        bulletPoints: 8,
+        boldPhrases: 6,
+        bulletPoints: 6,
         hasFAQ: false
+      },
+      seoMetrics: {
+        keywordDensity: {
+          density: '0.5%',
+          occurrences: 2,
+          optimal: false
+        }
       },
       metadata: {
         modelUsed: 'debug-mode',
-        modelTier: modelTier || 'standard',
-        estimatedCost: 0,
+        modelTier: modelTier,
+        estimatedCost: 0.00,
         generatedAt: new Date().toISOString(),
-        inputData: { niche, product, keywords }
-      }
+        niche: niche || 'missing',
+        product: product || 'missing', 
+        keywords: keywords || 'missing'
+      },
+      complianceStatus: {
+        affiliateDisclosure: true,
+        healthDisclaimer: true,
+        overallCompliance: true
+      },
+      optimizationSuggestions: [
+        !product ? 'Product field is required' : null,
+        !keywords ? 'Keywords field is required' : null,
+        'Debug mode active - no content generated'
+      ].filter(Boolean)
     });
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  return res.status(405).json({ 
+    error: 'Method not allowed',
+    allowed: ['GET', 'POST', 'OPTIONS']
+  });
 }
