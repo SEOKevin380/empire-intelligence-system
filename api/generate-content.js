@@ -84,7 +84,9 @@ export default async function handler(req, res) {
     // Generate content prompt
     const prompt = `Create a comprehensive SEO-optimized article about "${finalProduct}" in the ${niche} niche, focusing on the keywords "${finalKeywords}". Include proper headings, benefits, usage guidelines, and call-to-action sections. Target URL for links: ${finalTargetUrl}`;
 
-    // Call Claude API
+    // Call Claude API with enhanced error handling
+    console.log('Calling Claude API with model:', selectedModel.model);
+    
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -105,7 +107,26 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok) {
-      throw new Error(`Claude API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Claude API Error:', response.status, errorText);
+      
+      // Handle specific error codes
+      if (response.status === 404) {
+        return res.status(500).json({
+          error: 'Claude API configuration error',
+          message: 'API endpoint not found - check model name or API key format',
+          details: `Model: ${selectedModel.model}, Status: ${response.status}`
+        });
+      }
+      
+      if (response.status === 401) {
+        return res.status(500).json({
+          error: 'Claude API authentication error',
+          message: 'Invalid API key - check ANTHROPIC_API_KEY environment variable'
+        });
+      }
+      
+      throw new Error(`Claude API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
