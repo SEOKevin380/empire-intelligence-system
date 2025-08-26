@@ -135,7 +135,7 @@ Begin generation now:
     
     const message = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 8000,
+      max_tokens: 4000, // Fixed: Stay under Claude Haiku's 4096 limit
       messages: [
         {
           role: 'user',
