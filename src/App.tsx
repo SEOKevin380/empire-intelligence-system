@@ -148,15 +148,18 @@ const EmpireIntelligenceSystem = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          // Map to expected API fields
           keyword: formData.keyword,
           sourceMaterial: formData.sourceMaterial,
           sourceUrl: formData.sourceUrl,
           affiliateLink: formData.affiliateLink,
+          companyName: 'Auto-Detected Company', // Required by API
+          niche: 'general', // Required by API - will be auto-detected from source material
+          modelTier: 'efficient',
+          // Additional context for the AI
           prompt: finalPrompt,
           publication: publicationName,
-          site: siteName,
-          companyName: 'Auto-Detected', // Will be detected from source material
-          modelTier: 'efficient'
+          site: siteName
         })
       });
 
@@ -187,8 +190,97 @@ const EmpireIntelligenceSystem = () => {
     setContentBlocks(prev => prev.filter(block => block.id !== id));
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
+  const downloadHTML = () => {
+    if (!result || !result.content) return;
+    
+    // Create WordPress-optimized HTML
+    const wordpressHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${formData.keyword} - Article</title>
+    <!-- WordPress Compatible HTML - Ready for Copy/Paste -->
+</head>
+<body>
+<!-- START WORDPRESS CONTENT - Copy everything below this line -->
+
+${result.content.replace(/\n\n/g, '\n</p>\n\n<p>').replace(/^/, '<p>').replace(/$/, '</p>')}
+
+<!-- Content Blocks -->
+${contentBlocks.map(block => `
+<div class="content-block ${block.type.toLowerCase().replace(/\s+/g, '-')}">
+    <h3>${block.type}</h3>
+    <p>${block.content}</p>
+</div>
+`).join('')}
+
+<!-- Affiliate Link Integration -->
+${formData.affiliateLink ? `
+<div class="affiliate-cta" style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+    <p><strong>Ready to learn more?</strong></p>
+    <a href="${formData.affiliateLink}" target="_blank" rel="noopener" style="background: #007cba; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Get More Information →</a>
+</div>
+` : ''}
+
+<!-- Source Attribution -->
+${formData.sourceUrl ? `
+<div class="source-attribution" style="font-size: 0.9em; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+    <p><em>Source: <a href="${formData.sourceUrl}" target="_blank" rel="noopener">${formData.sourceUrl}</a></em></p>
+</div>
+` : ''}
+
+<!-- END WORDPRESS CONTENT -->
+</body>
+</html>`;
+
+    // Create and download the file
+    const blob = new Blob([wordpressHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${formData.keyword.replace(/\s+/g, '-').toLowerCase()}-article.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadWordPressReady = () => {
+    if (!result || !result.content) return;
+    
+    // Create clean WordPress-ready content (no HTML wrapper)
+    const wordpressContent = `${result.content}
+
+${contentBlocks.map(block => `
+<div class="content-block">
+<h3>${block.type}</h3>
+<p>${block.content}</p>
+</div>
+`).join('')}
+
+${formData.affiliateLink ? `
+<div class="affiliate-cta" style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+<p><strong>Ready to learn more?</strong></p>
+<a href="${formData.affiliateLink}" target="_blank" rel="noopener" style="background: #007cba; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Get More Information →</a>
+</div>
+` : ''}
+
+${formData.sourceUrl ? `
+<div class="source-attribution" style="font-size: 0.9em; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+<p><em>Source: <a href="${formData.sourceUrl}" target="_blank" rel="noopener">${formData.sourceUrl}</a></em></p>
+</div>
+` : ''}`;
+
+    const blob = new Blob([wordpressContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${formData.keyword.replace(/\s+/g, '-').toLowerCase()}-wordpress-ready.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const resetAll = () => {
@@ -788,26 +880,60 @@ const EmpireIntelligenceSystem = () => {
                 display: 'flex', 
                 justifyContent: 'space-between', 
                 alignItems: 'center', 
-                marginBottom: '16px' 
+                marginBottom: '16px',
+                flexWrap: 'wrap',
+                gap: '12px'
               }}>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#2d3748', margin: 0 }}>
                   Generated Content
                 </h3>
-                <button
-                  onClick={() => copyToClipboard(result.content)}
-                  style={{
-                    background: 'linear-gradient(135deg, #48bb78, #38a169)',
-                    color: 'white',
-                    border: 'none',
-                    padding: '12px 20px',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  📋 Copy All Content
-                </button>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(result.content)}
+                    style={{
+                      background: 'linear-gradient(135deg, #4299e1, #3182ce)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '10px 16px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    📋 Copy Text
+                  </button>
+                  <button
+                    onClick={downloadHTML}
+                    style={{
+                      background: 'linear-gradient(135deg, #48bb78, #38a169)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '10px 16px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    📄 Download HTML
+                  </button>
+                  <button
+                    onClick={downloadWordPressReady}
+                    style={{
+                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                      color: 'white',
+                      border: 'none',
+                      padding: '10px 16px',
+                      borderRadius: '6px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    🌐 WordPress Ready
+                  </button>
+                </div>
               </div>
               
               <div style={{
