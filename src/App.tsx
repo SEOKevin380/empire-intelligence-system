@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
 
 const EmpireIntelligenceSystem = () => {
-  const [userRole, setUserRole] = useState('team'); // 'team', 'admin'
+  const [userRole, setUserRole] = useState('team');
   const [currentStep, setCurrentStep] = useState('input');
   
-  // Core VA Input Data
   const [formData, setFormData] = useState({
     keyword: '',
     sourceUrl: '',
     affiliateLink: '',
     sourceMaterial: '',
-    selectedPrompt: '',
     selectedPublication: '',
-    selectedSite: ''
+    selectedSite: '',
+    wordCountTarget: 8000,
+    contactPhone: '',
+    contactCompany: '',
+    contactEmail: ''
   });
 
-  // System Configuration (Admin Editable)
   const [systemConfig, setSystemConfig] = useState({
     publications: {
       'globe-newswire': { name: 'Globe Newswire', type: 'publication', active: true },
@@ -52,17 +53,13 @@ const EmpireIntelligenceSystem = () => {
     }
   });
 
-  // Multi-Agent System Architecture
   const [agentAnalysis, setAgentAnalysis] = useState(null);
   const [isRunningAgents, setIsRunningAgents] = useState(false);
-
-  // Content Generation State
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [contentBlocks, setContentBlocks] = useState([]);
 
-  // Agent System Configuration
   const AGENT_SYSTEM = {
     seoAgent: {
       name: 'SEO Strategy Agent',
@@ -91,20 +88,55 @@ const EmpireIntelligenceSystem = () => {
     }
   };
 
+  const selectOptimalPrompt = (publication, keyword, sourceMaterial) => {
+    const keywordLower = keyword.toLowerCase();
+    const sourceLower = sourceMaterial.toLowerCase();
+    
+    if (publication === 'globe-newswire' || publication === 'newswire') {
+      if (sourceLower.includes('announce') || sourceLower.includes('launch') || sourceLower.includes('release')) {
+        return 'news-announcement';
+      }
+      if (keywordLower.includes('supplement') || keywordLower.includes('health') || keywordLower.includes('vitamin')) {
+        return 'health-supplement';
+      }
+      if (keywordLower.includes('tech') || keywordLower.includes('software') || keywordLower.includes('app')) {
+        return 'tech-innovation';
+      }
+      return 'news-announcement';
+    }
+    
+    if (publication === 'sponsored-article' || publication === 'our-sites') {
+      if (keywordLower.includes('supplement') || keywordLower.includes('gummies') || 
+          keywordLower.includes('vitamin') || keywordLower.includes('health')) {
+        return 'health-supplement';
+      }
+      if (keywordLower.includes('tech') || keywordLower.includes('software') || 
+          keywordLower.includes('app') || keywordLower.includes('digital')) {
+        return 'tech-innovation';
+      }
+      if (sourceLower.includes('review') || sourceLower.includes('benefit') || 
+          sourceLower.includes('feature') || sourceLower.includes('pros')) {
+        return 'product-review';
+      }
+      return 'product-review';
+    }
+    
+    return 'product-review';
+  };
+
   const runMultiAgentAnalysis = async (inputData) => {
     setIsRunningAgents(true);
     
     try {
-      // Simulate multi-agent analysis
       const analysis = {
         seoAgent: {
-          keywordDensity: Math.floor(Math.random() * 3) + 2, // 2-4%
+          keywordDensity: Math.floor(Math.random() * 3) + 2,
           competitorGaps: ['long-tail keywords', 'semantic variations', 'related topics'],
-          recommendedWordCount: inputData.selectedPrompt?.includes('health') ? 8000 : 6000,
-          seoScore: Math.floor(Math.random() * 20) + 80 // 80-100
+          recommendedWordCount: inputData.selectedPublication?.includes('health') ? 8000 : 6000,
+          seoScore: Math.floor(Math.random() * 20) + 80
         },
         researchAgent: {
-          sourceQuality: Math.floor(Math.random() * 20) + 80, // 80-100
+          sourceQuality: Math.floor(Math.random() * 20) + 80,
           contentDepth: ['benefits analysis', 'ingredient breakdown', 'user testimonials'],
           factualAccuracy: 95,
           missingElements: []
@@ -112,11 +144,11 @@ const EmpireIntelligenceSystem = () => {
         complianceAgent: {
           platformCompliance: 100,
           healthClaimsCheck: true,
-          disclaimerRequired: inputData.selectedPrompt?.includes('health'),
+          disclaimerRequired: inputData.selectedPublication?.includes('health'),
           regulatoryScore: 98
         },
         qualityAgent: {
-          readabilityScore: Math.floor(Math.random() * 15) + 85, // 85-100
+          readabilityScore: Math.floor(Math.random() * 15) + 85,
           engagementPotential: Math.floor(Math.random() * 20) + 80,
           structureQuality: 95,
           improvementSuggestions: ['add more examples', 'include statistics', 'enhance conclusion']
@@ -124,8 +156,8 @@ const EmpireIntelligenceSystem = () => {
         llmAgent: {
           promptOptimization: 92,
           futureCompatibility: 98,
-          aiDetectionResistance: Math.floor(Math.random() * 10) + 90, // 90-100
-          modelRecommendation: inputData.selectedPrompt?.includes('tech') ? 'premium' : 'efficient'
+          aiDetectionResistance: Math.floor(Math.random() * 10) + 90,
+          modelRecommendation: inputData.selectedPublication?.includes('tech') ? 'premium' : 'efficient'
         }
       };
       
@@ -140,7 +172,6 @@ const EmpireIntelligenceSystem = () => {
     }
   };
 
-  // Admin Functions
   const addPublication = () => {
     const name = prompt('Publication Name:');
     if (name) {
@@ -206,8 +237,20 @@ const EmpireIntelligenceSystem = () => {
     }));
   };
 
+  const addContentBlock = () => {
+    const blockType = prompt('Content Block Type (e.g., "Testimonial", "FAQ", "Ingredients"):');
+    const blockContent = prompt('Content for this block:');
+    if (blockType && blockContent) {
+      setContentBlocks(prev => [...prev, { type: blockType, content: blockContent, id: Date.now() }]);
+    }
+  };
+
+  const removeContentBlock = (id) => {
+    setContentBlocks(prev => prev.filter(block => block.id !== id));
+  };
+
   const generateContent = async () => {
-    if (!formData.keyword || !formData.sourceUrl || !formData.affiliateLink || !formData.sourceMaterial || !formData.selectedPrompt || !formData.selectedPublication) {
+    if (!formData.keyword || !formData.sourceUrl || !formData.affiliateLink || !formData.sourceMaterial || !formData.selectedPublication || !formData.contactPhone || !formData.contactCompany || !formData.contactEmail) {
       setError('Please fill in all required fields');
       return;
     }
@@ -216,28 +259,39 @@ const EmpireIntelligenceSystem = () => {
     setError(null);
     setResult(null);
 
-    // Step 1: Run Multi-Agent Analysis
     const analysis = await runMultiAgentAnalysis(formData);
-    
-    // Build the complete prompt with agent recommendations
-    const selectedPromptTemplate = systemConfig.prompts[formData.selectedPrompt]?.template || '';
+    const optimalPrompt = selectOptimalPrompt(formData.selectedPublication, formData.keyword, formData.sourceMaterial);
+    const selectedPromptTemplate = systemConfig.prompts[optimalPrompt]?.template || systemConfig.prompts['product-review']?.template || '';
     const basePrompt = selectedPromptTemplate.replace('[KEYWORD]', formData.keyword);
     
-    // Enhanced prompt with agent intelligence
     const enhancedPrompt = `${basePrompt}
 
-MULTI-AGENT SYSTEM REQUIREMENTS:
-- Word Count Target: ${analysis?.seoAgent?.recommendedWordCount || 6000}+ words (MANDATORY)
-- SEO Optimization: Include semantic variations and long-tail keywords
-- Content Structure: Use proper H2/H3 hierarchy with ${Math.floor((analysis?.seoAgent?.recommendedWordCount || 6000) / 400)} sections minimum
-- Quality Standards: Readability score 85+, engagement optimization
-- Compliance: ${analysis?.complianceAgent?.disclaimerRequired ? 'Include health disclaimers' : 'Standard compliance'}
-- Research Integration: Process and integrate all source material comprehensively
+CRITICAL CONTENT REQUIREMENTS (MANDATORY):
+- MINIMUM WORD COUNT: ${formData.wordCountTarget || analysis?.seoAgent?.recommendedWordCount || 8000} words (STRICTLY ENFORCED)
+- AFFILIATE LINK INTEGRATION: Naturally integrate this affiliate link 3-5 times: ${formData.affiliateLink}
+- STRUCTURE: Minimum ${Math.floor((formData.wordCountTarget || 8000) / 600)} H2 sections with detailed content under each
+- CONTENT DEPTH: Each section must be 400-600 words for comprehensive coverage
+
+INTELLIGENT CONTENT TYPE SELECTED: ${systemConfig.prompts[optimalPrompt]?.name || 'Product Review'}
+Publication: ${systemConfig.publications[formData.selectedPublication]?.name || 'General'}
+Compliance Level: ${formData.selectedPublication.includes('newswire') ? 'High (Press Release Standards)' : 'Standard'}
+
+AFFILIATE LINK PLACEMENT STRATEGY:
+- Early mention: "For more details about [product], visit: ${formData.affiliateLink}"
+- Mid-content: Natural integration within benefit discussions
+- Conclusion: Strong call-to-action with the affiliate link
+- Use anchor text variations: "learn more", "get details", "official website", "discover more"
 
 CONTENT BLOCKS TO INCLUDE:
 ${contentBlocks.map(block => `- ${block.type}: ${block.content}`).join('\n')}
 
-CRITICAL: Article must be ${analysis?.seoAgent?.recommendedWordCount || 6000}+ words with comprehensive coverage.`;
+QUALITY STANDARDS:
+- SEO Optimization: Include semantic variations and long-tail keywords around "${formData.keyword}"
+- Professional Language: Expert-level authority and credibility
+- Comprehensive Coverage: Address all aspects of the topic thoroughly
+- Engagement: Include examples, benefits, and practical applications
+
+CRITICAL: The article MUST be exactly ${formData.wordCountTarget || 8000}+ words with proper H2/H3 structure and natural affiliate link integration throughout.`;
     
     const publicationName = systemConfig.publications[formData.selectedPublication]?.name || '';
     const siteName = formData.selectedSite ? systemConfig.ownSites[formData.selectedSite]?.name : '';
@@ -249,20 +303,19 @@ CRITICAL: Article must be ${analysis?.seoAgent?.recommendedWordCount || 6000}+ w
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // Map to expected API fields
           keyword: formData.keyword,
           sourceMaterial: formData.sourceMaterial + '\n\nADDITIONAL CONTEXT:\n' + enhancedPrompt,
           sourceUrl: formData.sourceUrl,
           affiliateLink: formData.affiliateLink,
-          companyName: 'Auto-Detected Company', // Required by API
-          niche: 'general', // Required by API - will be auto-detected from source material
+          companyName: 'Auto-Detected Company',
+          niche: 'general',
           modelTier: analysis?.llmAgent?.modelRecommendation || 'efficient',
-          wordCountTarget: analysis?.seoAgent?.recommendedWordCount || 6000,
-          // Additional context for the AI
+          wordCountTarget: formData.wordCountTarget || analysis?.seoAgent?.recommendedWordCount || 8000,
           prompt: enhancedPrompt,
           publication: publicationName,
           site: siteName,
-          agentAnalysis: analysis
+          agentAnalysis: analysis,
+          intelligentPromptSelection: optimalPrompt
         })
       });
 
@@ -271,11 +324,12 @@ CRITICAL: Article must be ${analysis?.seoAgent?.recommendedWordCount || 6000}+ w
         setResult({
           ...data,
           agentAnalysis: analysis,
+          selectedContentType: systemConfig.prompts[optimalPrompt]?.name || 'Product Review',
           enhancedMetrics: {
             ...data,
-            targetWordCount: analysis?.seoAgent?.recommendedWordCount || 6000,
+            targetWordCount: formData.wordCountTarget || analysis?.seoAgent?.recommendedWordCount || 8000,
             actualWordCount: data.qualityBreakdown?.wordCount || 0,
-            wordCountAccuracy: Math.round(((data.qualityBreakdown?.wordCount || 0) / (analysis?.seoAgent?.recommendedWordCount || 6000)) * 100),
+            wordCountAccuracy: Math.round(((data.qualityBreakdown?.wordCount || 0) / (formData.wordCountTarget || analysis?.seoAgent?.recommendedWordCount || 8000)) * 100),
             agentScores: {
               seo: analysis?.seoAgent?.seoScore || 0,
               quality: analysis?.qualityAgent?.readabilityScore || 0,
@@ -297,36 +351,19 @@ CRITICAL: Article must be ${analysis?.seoAgent?.recommendedWordCount || 6000}+ w
     }
   };
 
-  const addContentBlock = () => {
-    const blockType = prompt('Content Block Type (e.g., "Testimonial", "FAQ", "Ingredients"):');
-    const blockContent = prompt('Content for this block:');
-    if (blockType && blockContent) {
-      setContentBlocks(prev => [...prev, { type: blockType, content: blockContent, id: Date.now() }]);
-    }
-  };
-
-  const removeContentBlock = (id) => {
-    setContentBlocks(prev => prev.filter(block => block.id !== id));
-  };
-
   const downloadHTML = () => {
     if (!result || !result.content) return;
     
-    // Create WordPress-optimized HTML
     const wordpressHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${formData.keyword} - Article</title>
-    <!-- WordPress Compatible HTML - Ready for Copy/Paste -->
 </head>
 <body>
-<!-- START WORDPRESS CONTENT - Copy everything below this line -->
-
 ${result.content.replace(/\n\n/g, '\n</p>\n\n<p>').replace(/^/, '<p>').replace(/$/, '</p>')}
 
-<!-- Content Blocks -->
 ${contentBlocks.map(block => `
 <div class="content-block ${block.type.toLowerCase().replace(/\s+/g, '-')}">
     <h3>${block.type}</h3>
@@ -334,26 +371,21 @@ ${contentBlocks.map(block => `
 </div>
 `).join('')}
 
-<!-- Affiliate Link Integration -->
 ${formData.affiliateLink ? `
 <div class="affiliate-cta" style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
     <p><strong>Ready to learn more?</strong></p>
-    <a href="${formData.affiliateLink}" target="_blank" rel="noopener" style="background: #007cba; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Get More Information →</a>
+    <a href="${formData.affiliateLink}" target="_blank" rel="noopener" style="background: #007cba; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Get More Information</a>
 </div>
 ` : ''}
 
-<!-- Source Attribution -->
 ${formData.sourceUrl ? `
 <div class="source-attribution" style="font-size: 0.9em; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
     <p><em>Source: <a href="${formData.sourceUrl}" target="_blank" rel="noopener">${formData.sourceUrl}</a></em></p>
 </div>
 ` : ''}
-
-<!-- END WORDPRESS CONTENT -->
 </body>
 </html>`;
 
-    // Create and download the file
     const blob = new Blob([wordpressHTML], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -368,7 +400,6 @@ ${formData.sourceUrl ? `
   const downloadWordPressReady = () => {
     if (!result || !result.content) return;
     
-    // Create clean WordPress-ready content (no HTML wrapper)
     const wordpressContent = `${result.content}
 
 ${contentBlocks.map(block => `
@@ -381,7 +412,7 @@ ${contentBlocks.map(block => `
 ${formData.affiliateLink ? `
 <div class="affiliate-cta" style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
 <p><strong>Ready to learn more?</strong></p>
-<a href="${formData.affiliateLink}" target="_blank" rel="noopener" style="background: #007cba; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Get More Information →</a>
+<a href="${formData.affiliateLink}" target="_blank" rel="noopener" style="background: #007cba; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Get More Information</a>
 </div>
 ` : ''}
 
@@ -409,9 +440,12 @@ ${formData.sourceUrl ? `
       sourceUrl: '',
       affiliateLink: '',
       sourceMaterial: '',
-      selectedPrompt: '',
       selectedPublication: '',
-      selectedSite: ''
+      selectedSite: '',
+      wordCountTarget: 8000,
+      contactPhone: '',
+      contactCompany: '',
+      contactEmail: ''
     });
     setResult(null);
     setError(null);
@@ -421,7 +455,6 @@ ${formData.sourceUrl ? `
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-      {/* Header */}
       <div style={{ 
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         color: 'white',
@@ -466,7 +499,6 @@ ${formData.sourceUrl ? `
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
         
-        {/* ADMIN PANEL */}
         {userRole === 'admin' && (
           <div style={{
             background: 'white',
@@ -476,12 +508,11 @@ ${formData.sourceUrl ? `
             marginBottom: '40px'
           }}>
             <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#2d3748', marginBottom: '24px' }}>
-              🔧 Admin Configuration Panel
+              Admin Configuration Panel
             </h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
               
-              {/* Publications Management */}
               <div style={{
                 background: 'linear-gradient(135deg, #f7fafc, #edf2f7)',
                 padding: '20px',
@@ -489,7 +520,7 @@ ${formData.sourceUrl ? `
                 border: '2px solid #e2e8f0'
               }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#2d3748', marginBottom: '16px' }}>
-                  📰 Publications
+                  Publications
                 </h3>
                 {Object.entries(systemConfig.publications).map(([id, pub]) => (
                   <div key={id} style={{ 
@@ -535,7 +566,6 @@ ${formData.sourceUrl ? `
                 </button>
               </div>
 
-              {/* Our Sites Management */}
               <div style={{
                 background: 'linear-gradient(135deg, #f0fff4, #c6f6d5)',
                 padding: '20px',
@@ -543,7 +573,7 @@ ${formData.sourceUrl ? `
                 border: '2px solid #9ae6b4'
               }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#22543d', marginBottom: '16px' }}>
-                  🌐 Our Sites
+                  Our Sites
                 </h3>
                 {Object.entries(systemConfig.ownSites).map(([id, site]) => (
                   <div key={id} style={{ 
@@ -589,7 +619,6 @@ ${formData.sourceUrl ? `
                 </button>
               </div>
 
-              {/* Prompts Management */}
               <div style={{
                 background: 'linear-gradient(135deg, #fff5f5, #fed7e2)',
                 padding: '20px',
@@ -597,7 +626,7 @@ ${formData.sourceUrl ? `
                 border: '2px solid #fbb6ce'
               }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#702459', marginBottom: '16px' }}>
-                  📝 Content Prompts
+                  Content Prompts
                 </h3>
                 {Object.entries(systemConfig.prompts).map(([id, prompt]) => (
                   <div key={id} style={{ 
@@ -648,7 +677,6 @@ ${formData.sourceUrl ? `
           </div>
         )}
 
-        {/* TEAM INPUT FORM */}
         {currentStep === 'input' && (
           <div style={{
             background: 'white',
@@ -665,7 +693,7 @@ ${formData.sourceUrl ? `
               marginBottom: '16px',
               textAlign: 'center'
             }}>
-              📝 Simple Content Creation
+              Simple Content Creation
             </h2>
             <p style={{ 
               fontSize: '18px', 
@@ -673,12 +701,11 @@ ${formData.sourceUrl ? `
               textAlign: 'center', 
               marginBottom: '32px' 
             }}>
-              Fill in the 4 required fields, select your prompt and publication, then generate!
+              Fill in the required fields, select your publication, then generate!
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
-              {/* Core Required Fields */}
               <div style={{
                 background: 'linear-gradient(135deg, #fff5f5, #fed7e2)',
                 padding: '24px',
@@ -686,7 +713,7 @@ ${formData.sourceUrl ? `
                 border: '2px solid #f687b3'
               }}>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#702459', marginBottom: '20px' }}>
-                  🎯 Required Information
+                  Required Information
                 </h3>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
@@ -731,24 +758,69 @@ ${formData.sourceUrl ? `
                   </div>
                 </div>
                 
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontWeight: 'bold', color: '#702459', marginBottom: '8px' }}>
-                    Affiliate Link *
-                  </label>
-                  <input
-                    type="url"
-                    name="affiliateLink"
-                    value={formData.affiliateLink}
-                    onChange={handleInputChange}
-                    placeholder="https://affiliate-tracking-link.com"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      border: '2px solid #f687b3',
-                      borderRadius: '8px',
-                      fontSize: '16px'
-                    }}
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#702459', marginBottom: '8px' }}>
+                      Affiliate Link *
+                    </label>
+                    <input
+                      type="url"
+                      name="affiliateLink"
+                      value={formData.affiliateLink}
+                      onChange={handleInputChange}
+                      placeholder="https://affiliate-tracking-link.com"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '2px solid #f687b3',
+                        borderRadius: '8px',
+                        fontSize: '16px'
+                      }}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#702459', marginBottom: '8px' }}>
+                      Target Word Count *
+                    </label>
+                    <select
+                      name="wordCountTarget"
+                      value={formData.wordCountTarget}
+                      onChange={handleInputChange}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '2px solid #f687b3',
+                        borderRadius: '8px',
+                        fontSize: '16px'
+                      }}
+                    >
+                      <option value={6000}>6,000+ Words</option>
+                      <option value={8000}>8,000+ Words (Recommended)</option>
+                      <option value={10000}>10,000+ Words</option>
+                      <option value={12000}>12,000+ Words</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#702459', marginBottom: '8px' }}>
+                      Phone *
+                    </label>
+                    <input
+                      type="tel"
+                      name="contactPhone"
+                      value={formData.contactPhone}
+                      onChange={handleInputChange}
+                      placeholder="(555) 123-4567"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '2px solid #f687b3',
+                        borderRadius: '8px',
+                        fontSize: '16px'
+                      }}
+                    />
+                  </div>
                 </div>
                 
                 <div>
@@ -759,7 +831,7 @@ ${formData.sourceUrl ? `
                     name="sourceMaterial"
                     value={formData.sourceMaterial}
                     onChange={handleInputChange}
-                    rows={6}
+                    rows={4}
                     placeholder="Paste your source material, product information, research, or any content to base the article on..."
                     style={{
                       width: '100%',
@@ -771,38 +843,73 @@ ${formData.sourceUrl ? `
                     }}
                   />
                 </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#702459', marginBottom: '8px' }}>
+                      Company Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="contactCompany"
+                      value={formData.contactCompany}
+                      onChange={handleInputChange}
+                      placeholder="Your Company Name"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '2px solid #f687b3',
+                        borderRadius: '8px',
+                        fontSize: '16px'
+                      }}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#702459', marginBottom: '8px' }}>
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      name="contactEmail"
+                      value={formData.contactEmail}
+                      onChange={handleInputChange}
+                      placeholder="contact@company.com"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '2px solid #f687b3',
+                        borderRadius: '8px',
+                        fontSize: '16px'
+                      }}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label style={{ display: 'block', fontWeight: 'bold', color: '#702459', marginBottom: '8px' }}>
+                      Phone *
+                    </label>
+                    <input
+                      type="tel"
+                      name="contactPhone"
+                      value={formData.contactPhone}
+                      onChange={handleInputChange}
+                      placeholder="(555) 123-4567"
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: '2px solid #f687b3',
+                        borderRadius: '8px',
+                        fontSize: '16px'
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Prompt Selection */}
               <div>
                 <label style={{ display: 'block', fontWeight: 'bold', color: '#4a5568', marginBottom: '8px', fontSize: '18px' }}>
-                  📋 Select Content Type *
-                </label>
-                <select
-                  name="selectedPrompt"
-                  value={formData.selectedPrompt}
-                  onChange={handleInputChange}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '12px',
-                    fontSize: '16px'
-                  }}
-                >
-                  <option value="">Choose content type...</option>
-                  {Object.entries(systemConfig.prompts)
-                    .filter(([_, prompt]) => prompt.active)
-                    .map(([id, prompt]) => (
-                    <option key={id} value={id}>{prompt.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Publication Selection */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 'bold', color: '#4a5568', marginBottom: '8px', fontSize: '18px' }}>
-                  📰 Where to Publish *
+                  Where to Publish *
                 </label>
                 <select
                   name="selectedPublication"
@@ -823,13 +930,15 @@ ${formData.sourceUrl ? `
                     <option key={id} value={id}>{pub.name}</option>
                   ))}
                 </select>
+                <div style={{ fontSize: '12px', color: '#718096', marginTop: '4px' }}>
+                  Content type will be intelligently selected based on publication and keyword
+                </div>
               </div>
 
-              {/* Site Selection (if "Our Sites" selected) */}
               {formData.selectedPublication === 'our-sites' && (
                 <div>
                   <label style={{ display: 'block', fontWeight: 'bold', color: '#4a5568', marginBottom: '8px', fontSize: '18px' }}>
-                    🌐 Which Site *
+                    Which Site *
                   </label>
                   <select
                     name="selectedSite"
@@ -853,7 +962,6 @@ ${formData.sourceUrl ? `
                 </div>
               )}
 
-              {/* Content Blocks */}
               {contentBlocks.length > 0 && (
                 <div style={{
                   background: 'linear-gradient(135deg, #f0fff4, #c6f6d5)',
@@ -862,7 +970,7 @@ ${formData.sourceUrl ? `
                   border: '2px solid #9ae6b4'
                 }}>
                   <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#22543d', marginBottom: '12px' }}>
-                    🧩 Additional Content Blocks
+                    Additional Content Blocks
                   </h4>
                   {contentBlocks.map((block) => (
                     <div key={block.id} style={{
@@ -930,9 +1038,9 @@ ${formData.sourceUrl ? `
 
               <button
                 onClick={generateContent}
-                disabled={isGenerating || isRunningAgents || !formData.keyword || !formData.sourceUrl || !formData.affiliateLink || !formData.sourceMaterial || !formData.selectedPrompt || !formData.selectedPublication}
+                disabled={isGenerating || isRunningAgents || !formData.keyword || !formData.sourceUrl || !formData.affiliateLink || !formData.sourceMaterial || !formData.selectedPublication || !formData.contactPhone || !formData.contactCompany || !formData.contactEmail}
                 style={{
-                  background: isGenerating || isRunningAgents || !formData.keyword || !formData.sourceUrl || !formData.affiliateLink || !formData.sourceMaterial || !formData.selectedPrompt || !formData.selectedPublication
+                  background: isGenerating || isRunningAgents || !formData.keyword || !formData.sourceUrl || !formData.affiliateLink || !formData.sourceMaterial || !formData.selectedPublication || !formData.contactPhone || !formData.contactCompany || !formData.contactEmail
                     ? 'linear-gradient(135deg, #a0aec0, #718096)' 
                     : 'linear-gradient(135deg, #667eea, #764ba2)',
                   color: 'white',
@@ -941,20 +1049,19 @@ ${formData.sourceUrl ? `
                   border: 'none',
                   fontSize: '20px',
                   fontWeight: 'bold',
-                  cursor: isGenerating || isRunningAgents || !formData.keyword || !formData.sourceUrl || !formData.affiliateLink || !formData.sourceMaterial || !formData.selectedPrompt || !formData.selectedPublication ? 'not-allowed' : 'pointer',
+                  cursor: isGenerating || isRunningAgents || !formData.keyword || !formData.sourceUrl || !formData.affiliateLink || !formData.sourceMaterial || !formData.selectedPublication || !formData.contactPhone || !formData.contactCompany || !formData.contactEmail ? 'not-allowed' : 'pointer',
                   transition: 'all 0.3s',
                   width: '100%'
                 }}
               >
-                {isRunningAgents ? '🤖 Multi-Agent Analysis Running...' : 
-                 isGenerating ? '⚡ Generating Enhanced Content...' : 
-                 '🚀 Run Multi-Agent Content Generation'}
+                {isRunningAgents ? 'Multi-Agent Analysis Running...' : 
+                 isGenerating ? 'Generating Enhanced Content...' : 
+                 'Run Intelligent Content Generation'}
               </button>
             </div>
           </div>
         )}
 
-        {/* RESULTS DISPLAY */}
         {currentStep === 'result' && result && (
           <div style={{
             background: 'white',
@@ -963,10 +1070,9 @@ ${formData.sourceUrl ? `
             boxShadow: '0 20px 60px rgba(0,0,0,0.1)'
           }}>
             <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#2d3748', marginBottom: '32px' }}>
-              🎉 Multi-Agent Content Generation Complete
+              Multi-Agent Content Generation Complete
             </h2>
             
-            {/* Multi-Agent Analysis Results */}
             {result?.agentAnalysis && (
               <div style={{
                 background: 'linear-gradient(135deg, #f0fff4, #c6f6d5)',
@@ -976,7 +1082,7 @@ ${formData.sourceUrl ? `
                 marginBottom: '24px'
               }}>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#22543d', marginBottom: '16px' }}>
-                  🤖 Multi-Agent System Analysis
+                  Multi-Agent System Analysis
                 </h3>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
@@ -1016,7 +1122,6 @@ ${formData.sourceUrl ? `
               </div>
             )}
             
-            {/* Enhanced Quality Metrics */}
             <div style={{
               background: 'linear-gradient(135deg, #f7fafc, #edf2f7)',
               padding: '24px',
@@ -1025,7 +1130,7 @@ ${formData.sourceUrl ? `
               marginBottom: '24px'
             }}>
               <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#2d3748', marginBottom: '16px' }}>
-                📊 Enhanced Content Metrics
+                Enhanced Content Metrics
               </h3>
               
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '14px' }}>
@@ -1065,13 +1170,15 @@ ${formData.sourceUrl ? `
                     ${result?.estimatedCost || 0}
                   </div>
                 </div>
-                
-                <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
-                  <div style={{ fontWeight: 'bold', color: '#2d3748' }}>Model Used</div>
-                  <div style={{ fontSize: '12px', margin: '4px 0', color: '#4a5568' }}>
-                    {result?.modelUsed || 'N/A'}
+
+                {result?.selectedContentType && (
+                  <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '8px', textAlign: 'center' }}>
+                    <div style={{ fontWeight: 'bold', color: '#2d3748' }}>Content Type</div>
+                    <div style={{ fontSize: '12px', margin: '4px 0', color: '#4a5568' }}>
+                      {result.selectedContentType}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               
               {result?.enhancedMetrics?.wordCountAccuracy < 90 && (
@@ -1084,13 +1191,12 @@ ${formData.sourceUrl ? `
                   color: '#c53030',
                   fontSize: '14px'
                 }}>
-                  ⚠️ <strong>Word Count Warning:</strong> Content is {result?.enhancedMetrics?.wordCountAccuracy || 0}% of target. 
+                  Word Count Warning: Content is {result?.enhancedMetrics?.wordCountAccuracy || 0}% of target. 
                   Consider regenerating with more specific requirements.
                 </div>
               )}
             </div>
 
-            {/* Generated Content */}
             <div>
               <div style={{ 
                 display: 'flex', 
@@ -1117,7 +1223,7 @@ ${formData.sourceUrl ? `
                       fontWeight: 'bold'
                     }}
                   >
-                    📋 Copy Text
+                    Copy Text
                   </button>
                   <button
                     onClick={downloadHTML}
@@ -1132,7 +1238,7 @@ ${formData.sourceUrl ? `
                       fontWeight: 'bold'
                     }}
                   >
-                    📄 Download HTML
+                    Download HTML
                   </button>
                   <button
                     onClick={downloadWordPressReady}
@@ -1147,7 +1253,7 @@ ${formData.sourceUrl ? `
                       fontWeight: 'bold'
                     }}
                   >
-                    🌐 WordPress Ready
+                    WordPress Ready
                   </button>
                 </div>
               </div>
@@ -1187,7 +1293,7 @@ ${formData.sourceUrl ? `
                   cursor: 'pointer'
                 }}
               >
-                🔄 Create New Content
+                Create New Content
               </button>
             </div>
           </div>
