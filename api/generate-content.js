@@ -147,8 +147,8 @@ Begin comprehensive generation now:
     console.log('Calling Anthropic API...');
     
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022', // UPGRADED: More powerful model with higher limits
-      max_tokens: 8000, // Back to 8000 tokens for full content generation
+      model: 'claude-3-5-sonnet-20240620', // CORRECTED: Valid Sonnet model name
+      max_tokens: 8000, // Higher limit for full content generation
       messages: [
         {
           role: 'user',
