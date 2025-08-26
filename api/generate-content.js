@@ -1,5 +1,5 @@
-// Restore Original Working Format - /api/generate-content.js
-// Based on your Master Project Memory - this was working before
+// Match Frontend Field Names - /api/generate-content.js
+// Updated to match your actual form field names
 
 export default async function handler(req, res) {
   // CORS headers
@@ -26,16 +26,39 @@ export default async function handler(req, res) {
       });
     }
 
-    // Extract request data
-    const { niche, product, keywords, modelTier = 'standard', targetUrl } = req.body;
+    // Extract request data - matching your actual form field names
+    const { 
+      niche,           // ✅ This works
+      keyword,         // Your form uses "keyword" (singular)
+      companyName,     // Likely your "product" equivalent 
+      platform,        // Additional field from your form
+      affiliateLink,   // Your target URL field
+      modelTier = 'standard'
+    } = req.body;
 
-    // Validate required fields
-    if (!niche || !product || !keywords) {
+    // Flexible validation - accept either field naming convention
+    const productName = req.body.product || req.body.companyName || req.body.productName;
+    const keywords = req.body.keywords || req.body.keyword;
+    const targetUrl = req.body.targetUrl || req.body.affiliateLink;
+
+    // Validate required fields with flexible names
+    if (!niche || (!productName && !companyName) || !keywords) {
       return res.status(400).json({
         error: 'Missing required fields',
-        required: ['niche', 'product', 'keywords']
+        details: {
+          niche: !!niche,
+          product: !!(productName || companyName),
+          keywords: !!keywords,
+          receivedFields: Object.keys(req.body)
+        },
+        help: 'Required: niche, product/companyName, keyword/keywords'
       });
     }
+
+    // Use the values we found
+    const finalProduct = productName || companyName || 'Product';
+    const finalKeywords = keywords;
+    const finalTargetUrl = targetUrl || 'https://example.com';
 
     // Model configuration
     const modelConfig = {
@@ -59,7 +82,7 @@ export default async function handler(req, res) {
     const selectedModel = modelConfig[modelTier] || modelConfig['standard'];
 
     // Generate content prompt
-    const prompt = `Create a comprehensive SEO-optimized article about "${product}" in the ${niche} niche, focusing on the keywords "${keywords}". Include proper headings, benefits, usage guidelines, and call-to-action sections. Target URL for links: ${targetUrl || 'https://example.com'}`;
+    const prompt = `Create a comprehensive SEO-optimized article about "${finalProduct}" in the ${niche} niche, focusing on the keywords "${finalKeywords}". Include proper headings, benefits, usage guidelines, and call-to-action sections. Target URL for links: ${finalTargetUrl}`;
 
     // Call Claude API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
