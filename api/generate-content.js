@@ -173,6 +173,8 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('Raw request body:', JSON.stringify(req.body, null, 2));
+
     const {
       contentType,
       publication, 
@@ -186,25 +188,41 @@ export default async function handler(req, res) {
       phone
     } = req.body;
 
-    console.log('Received request data:', { 
-      contentType, publication, keyword, wordCount, 
-      hasAffiliate: !!affiliateLink, hasSource: !!sourceMaterial 
+    console.log('Extracted fields:', { 
+      contentType, 
+      publication, 
+      keyword, 
+      wordCount, 
+      hasAffiliate: !!affiliateLink, 
+      hasSource: !!sourceMaterial,
+      hasEmail: !!email,
+      hasPhone: !!phone
     });
 
     // Validate required fields (Zero Failure Policy)
     if (!publication || !keyword || !wordCount) {
+      console.log('Validation failed - missing required fields');
       return res.status(400).json({
         error: 'Missing required fields',
         details: 'Publication, keyword, and word count are required',
+        received: { 
+          publication: publication || 'MISSING', 
+          keyword: keyword || 'MISSING', 
+          wordCount: wordCount || 'MISSING' 
+        },
         success: false,
         timestamp: new Date().toISOString()
       });
     }
 
     if (!sourceMaterial || sourceMaterial.trim().length < 50) {
+      console.log('Source material validation failed');
       return res.status(400).json({
         error: 'Source material is mandatory for factual accuracy',
         details: 'Minimum 50 characters required for zero-failure policy',
+        received: { 
+          sourceLength: sourceMaterial ? sourceMaterial.length : 0 
+        },
         success: false,
         timestamp: new Date().toISOString()
       });
@@ -212,6 +230,7 @@ export default async function handler(req, res) {
 
     // Contact validation - require at least email OR phone
     if (!email && !phone) {
+      console.log('Contact validation failed');
       return res.status(400).json({
         error: 'Contact information required',
         details: 'Please provide either email or phone number',
@@ -299,7 +318,7 @@ export default async function handler(req, res) {
     const wordEstimate = finalContent.split(/\s+/).length;
     const affiliateCount = affiliateLink ? (finalContent.match(/\[.*?\]\(.*?\)/g) || []).length : 0;
 
-    console.log(`Content generation completed: ${wordEstimate} words, ${affiliateCount} affiliate links`);
+    console.log(`Content generation completed successfully: ${wordEstimate} words, ${affiliateCount} affiliate links`);
 
     // Success response
     res.status(200).json({
