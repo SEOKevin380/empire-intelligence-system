@@ -1,5 +1,5 @@
-// Field Debugger - /api/generate-content.js
-// Shows exactly what field values are being received
+// Frontend Compatible Debugger - /api/generate-content.js
+// Returns the exact format your frontend expects
 
 export default function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,66 +12,64 @@ export default function handler(req, res) {
 
   if (req.method === 'GET') {
     return res.status(200).json({
-      status: 'FIELD_DEBUGGER_ONLINE',
-      message: 'Ready to debug field values'
+      status: 'DEBUGGER_ONLINE',
+      message: 'Ready to debug your form submission'
     });
   }
 
   if (req.method === 'POST') {
-    // Extract all possible field variations
+    // Return the exact response format your frontend expects for successful content generation
     const bodyData = req.body || {};
-    const allFields = {
-      // Standard field names
-      niche: bodyData.niche,
-      product: bodyData.product, 
-      keywords: bodyData.keywords,
-      modelTier: bodyData.modelTier,
-      targetUrl: bodyData.targetUrl,
-      
-      // Possible alternative field names
-      productName: bodyData.productName,
-      productTitle: bodyData.productTitle,
-      keywordList: bodyData.keywordList,
-      keywordString: bodyData.keywordString,
-      targetKeywords: bodyData.targetKeywords,
-      
-      // Check all body keys
-      allBodyKeys: Object.keys(bodyData),
-      bodyLength: Object.keys(bodyData).length
-    };
-
-    // Check what's actually present
-    const presentFields = {};
-    const missingFields = {};
     
-    Object.entries(allFields).forEach(([key, value]) => {
-      if (key === 'allBodyKeys' || key === 'bodyLength') return;
-      
-      if (value && value !== '' && value !== null && value !== undefined) {
-        presentFields[key] = value;
-      } else {
-        missingFields[key] = typeof value;
-      }
-    });
-
+    // Extract fields exactly as your frontend sends them
+    const { niche, product, keywords, modelTier, targetUrl } = bodyData;
+    
     return res.status(200).json({
-      status: 'FIELD_DEBUG_REPORT',
-      timestamp: new Date().toISOString(),
-      validation: {
-        niche: !!bodyData.niche,
-        product: !!bodyData.product,
-        keywords: !!bodyData.keywords
+      success: true,
+      content: `# DEBUG REPORT - Form Data Analysis
+
+## Field Status Check
+- **Niche**: ${niche ? `✅ "${niche}"` : '❌ Missing'}
+- **Product**: ${product ? `✅ "${product}"` : '❌ Missing'}  
+- **Keywords**: ${keywords ? `✅ "${keywords}"` : '❌ Missing'}
+- **Model Tier**: ${modelTier || 'standard'}
+- **Target URL**: ${targetUrl || 'Not provided'}
+
+## Raw Request Data
+\`\`\`json
+${JSON.stringify(bodyData, null, 2)}
+\`\`\`
+
+## All Field Keys Received
+${Object.keys(bodyData).map(key => `- ${key}: ${typeof bodyData[key]} = "${bodyData[key]}"`).join('\n')}
+
+## Diagnosis
+${!product && !keywords ? 'ISSUE: Both product and keywords are missing!' :
+  !product ? 'ISSUE: Product field is missing or empty!' :
+  !keywords ? 'ISSUE: Keywords field is missing or empty!' :
+  'SUCCESS: All required fields are present!'}
+
+This debug report shows exactly what your form is sending to the API.`,
+      
+      qualityScore: 100,
+      qualityBreakdown: {
+        wordCount: 150,
+        targetWords: 2000,
+        hasH1Title: true,
+        h2Sections: 3,
+        h3Sections: 0,
+        affiliateLinks: 0,
+        boldPhrases: 5,
+        bulletPoints: 8,
+        hasFAQ: false
       },
-      fieldAnalysis: {
-        presentFields,
-        missingFields,
-        allBodyKeys: Object.keys(bodyData),
-        totalFields: Object.keys(bodyData).length
-      },
-      rawBody: bodyData,
-      recommendation: !bodyData.product ? 'Product field is missing or empty' :
-                     !bodyData.keywords ? 'Keywords field is missing or empty' :
-                     'All required fields present - should work!'
+      metadata: {
+        modelUsed: 'debug-mode',
+        modelTier: modelTier || 'standard',
+        estimatedCost: 0,
+        generatedAt: new Date().toISOString(),
+        inputData: { niche, product, keywords }
+      }
     });
   }
 
