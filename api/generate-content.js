@@ -27,10 +27,17 @@ export default async function handler(req, res) {
     console.log('- Source Material length:', sourceMaterial?.length || 0);
 
     // Validate required fields
-    if (!keyword || !sourceMaterial) {
+    if (!keyword) {
       return res.status(400).json({
         error: 'Missing required fields',
-        details: 'Keyword and Source Material are required'
+        details: 'Keyword is required'
+      });
+    }
+
+    if (!sourceMaterial || sourceMaterial.length < 50) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        details: 'Source Material must be at least 50 characters'
       });
     }
 
@@ -46,11 +53,9 @@ export default async function handler(req, res) {
 
     console.log('API Key status:', apiKey ? 'Present' : 'Missing');
 
-    // Enhanced content generation with multiple API calls for longer content
     const targetWords = parseInt(wordCount) || 8000;
-    const sections = Math.ceil(targetWords / 1500); // Approximate sections needed
     
-    console.log(`Generating ${targetWords} word article in ${sections} sections...`);
+    console.log(`Generating ${targetWords} word article...`);
 
     // Build comprehensive content generation prompt
     const prompt = `You are an expert SEO content writer and conversion specialist. Create a comprehensive, high-converting article about "${keyword}" that follows these EXACT requirements:
@@ -59,23 +64,33 @@ export default async function handler(req, res) {
 
 1. **"In This Article" Section**: Create a clean, professional section titled "In This Article, You'll Discover:" featuring 6-7 sentence-style lines. Do NOT use any bullet symbols (•, –, *, etc.) or emojis. Each line should be a full sentence or clause, start with a capital letter, and be formatted as standalone lines without special characters.
 
+Example format:
+In This Article, You'll Discover:
+The complete science behind mushroom gummies and their cognitive benefits
+How leading brands are revolutionizing wellness through innovative formulations
+Expert analysis of the top-performing mushroom gummy products in 2025
+Clinical research findings that support mushroom supplementation claims
+Professional recommendations for choosing the right mushroom gummies
+Common mistakes people make when selecting wellness supplements
+Why timing and dosage matter for optimal cognitive enhancement results
+
 2. **Affiliate Link Integration**: ${affiliateLink ? `MUST naturally integrate this EXACT affiliate link throughout the content: ${affiliateLink}
 
-Use this link in:
+Use this link in multiple places:
 - A compelling call-to-action in the introduction: "Based on our extensive research, we recommend checking out ${affiliateLink} for the top-rated solution."
 - Product recommendation sections: "You can learn more about our #1 recommendation at ${affiliateLink}"
-- Mid-article CTAs: "Click here to see our top choice: ${affiliateLink}"
+- Mid-article CTAs: "Ready to learn more? Visit ${affiliateLink} to see our top choice."
 - Conclusion with strong conversion language: "Ready to get started? Visit ${affiliateLink} to learn more."
 - Use the EXACT URL provided, not placeholder text` : 'Include general calls-to-action for product recommendations'}
 
 3. **COMPREHENSIVE LENGTH**: Write a FULL ${targetWords}-word article. This should be extremely detailed and comprehensive. Include:
-   - Extensive introduction (300+ words)
-   - Multiple detailed sections with subheadings (500+ words each)
-   - Product comparisons and analysis
+   - Extensive introduction (400+ words)
+   - Multiple detailed sections with subheadings (600+ words each)
+   - Product analysis and comparisons
    - Benefits and features breakdown
    - User testimonials and reviews section
-   - FAQ section
-   - Detailed conclusion with multiple CTAs (300+ words)
+   - Detailed FAQ section (300+ words)
+   - Comprehensive conclusion with multiple CTAs (400+ words)
 
 4. **4-Goal Content Structure**:
    - GOAL 1: EDUCATE (Establish expertise, provide valuable information)
@@ -86,7 +101,7 @@ Use this link in:
 5. **SEO Optimization**: 
    - Use "${keyword}" and semantic variations throughout naturally
    - Include related keywords and LSI terms
-   - Create scannable headings and subheadings (H2, H3, H4)
+   - Create scannable headings and subheadings (H1, H2, H3, H4)
    - Optimize for search intent and user engagement
 
 ## SOURCE MATERIAL TO INTEGRATE:
@@ -101,30 +116,31 @@ IMPORTANT: Use the source material extensively throughout the article. Reference
 - Use compelling headlines and subheadings
 - Include specific product details, benefits, and comparisons
 - Create urgency and social proof elements
-- Add FAQ section addressing common questions
+- Add comprehensive FAQ section addressing common questions
 - End with strong conversion-focused conclusion with multiple CTAs
 
 ## CRITICAL INSTRUCTIONS:
 - Write the COMPLETE ${targetWords}-word article in this response
-- Use the EXACT affiliate link provided: ${affiliateLink || '[No affiliate link provided]'}
-- Integrate source material details throughout
+- Use the EXACT affiliate link provided: ${affiliateLink || 'No specific affiliate link provided'}
+- Integrate source material details throughout every section
 - Make every section detailed and comprehensive
-- Include multiple CTAs throughout the content
+- Include multiple compelling CTAs throughout the content
+- Ensure the article flows logically and maintains reader engagement
 
 Create the complete, full-length article now:`;
 
-    // Make Claude API call with maximum tokens
+    // Make Claude API call with correct model name and headers
     console.log('Making Claude API call...');
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        'anthropic-version': '2023-06-01' // REQUIRED header
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022', // Using more capable model for longer content
-        max_tokens: 8000, // Maximum tokens for longer content
+        model: 'claude-sonnet-4-20250514', // CORRECT current model name
+        max_tokens: 8000, // Maximum for longer content
         messages: [{
           role: 'user',
           content: prompt
@@ -137,9 +153,18 @@ Create the complete, full-length article now:`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Claude API Error Response:', errorText);
+      
+      let errorDetails = errorText;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorDetails = errorJson.error?.message || errorText;
+      } catch (e) {
+        // Keep original error text if not JSON
+      }
+      
       return res.status(response.status).json({
         error: 'Content generation failed',
-        details: `API Error ${response.status}: ${errorText}`
+        details: `API Error ${response.status}: ${errorDetails}`
       });
     }
 
@@ -170,7 +195,7 @@ Create the complete, full-length article now:`;
     const finalWordCount = generatedContent.split(' ').length;
     console.log(`Content generated successfully, length: ${finalWordCount} words`);
 
-    // If content is significantly shorter than requested, add a note
+    // If content is significantly shorter than requested, note it
     if (finalWordCount < targetWords * 0.7) {
       console.log(`Warning: Generated content (${finalWordCount} words) is shorter than requested (${targetWords} words)`);
     }
@@ -187,7 +212,7 @@ Create the complete, full-length article now:`;
         keyword: keyword,
         timestamp: new Date().toISOString(),
         affiliateLinkUsed: !!affiliateLink,
-        sectionsGenerated: 1
+        modelUsed: 'claude-sonnet-4-20250514'
       }
     });
 
