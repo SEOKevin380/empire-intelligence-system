@@ -27,24 +27,12 @@ export default async function handler(req, res) {
 
     const data = req.body || {};
 
-    // Try EVERY possible field name variation
-    const keyword = data.keyword || data.topic || data['Target Keyword'] || data.targetKeyword || data['target-keyword'] || '';
-    
-    // Try ALL possible source material field names
-    const sourceMaterial = data.sourceMaterial || 
-                          data.source_material || 
-                          data['Source Material'] || 
-                          data.sourcematerial || 
-                          data['source-material'] || 
-                          data.sourceContent ||
-                          data.content ||
-                          data.material ||
-                          data.text ||
-                          '';
-
-    const affiliateLink = data.affiliateLink || data.affiliate_link || data['Affiliate Link'] || '';
-    const wordCount = parseInt(data.wordCount || data.word_count || data['Word Count Target'] || 8000);
-    const niche = data.niche || data.publication || 'health';
+    // Use the exact field names from your form
+    const keyword = data.keyword || '';
+    const sourceMaterial = data.sourceMaterial || '';
+    const affiliateLink = data.affiliateLink || '';
+    const wordCount = parseInt(data.wordCount) || 8000;
+    const niche = data.publication || 'health';
 
     console.log('=== EXTRACTED VALUES ===');
     console.log('Keyword:', keyword);
@@ -53,21 +41,26 @@ export default async function handler(req, res) {
     console.log('Affiliate Link:', affiliateLink);
     console.log('Word Count:', wordCount);
 
-    // More lenient validation
-    if (!keyword) {
+    console.log('=== VALIDATION CHECK ===');
+    console.log('Keyword found:', keyword);
+    console.log('Source material length:', sourceMaterial.length);
+    console.log('First 100 chars of source:', sourceMaterial.substring(0, 100));
+
+    // Simple validation
+    if (!keyword || keyword.trim().length === 0) {
       return res.status(400).json({ 
         error: 'Keyword is required',
-        receivedData: Object.keys(data),
-        debug: 'No keyword found in any expected field'
+        receivedKeyword: keyword,
+        debug: 'Keyword field is empty or invalid'
       });
     }
 
-    if (!sourceMaterial || sourceMaterial.length < 10) {
+    if (!sourceMaterial || sourceMaterial.trim().length < 10) {
       return res.status(400).json({ 
         error: 'Source material is too short or missing',
-        receivedFields: Object.keys(data),
-        sourceMaterialFound: sourceMaterial,
-        debug: 'Need substantial source material for accuracy'
+        sourceMaterialLength: sourceMaterial.length,
+        sourceMaterialPreview: sourceMaterial.substring(0, 200),
+        debug: 'Source material must be at least 10 characters'
       });
     }
 
