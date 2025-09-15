@@ -27,12 +27,38 @@ export default function App() {
 
   const handleSubmit = async () => {
     console.log('Button clicked! Form data:', formData);
+    console.log('Keyword value:', formData.keyword);
+    console.log('Source Material length:', formData.sourceMaterial.length);
+    
+    // Client-side validation before sending to API
+    if (!formData.keyword || formData.keyword.trim() === '') {
+      setError('Please enter a Target Keyword');
+      return;
+    }
+    
+    if (!formData.publication || formData.publication.trim() === '') {
+      setError('Please select a Publication');
+      return;
+    }
+    
+    if (!formData.sourceMaterial || formData.sourceMaterial.length < 50) {
+      setError('Source Material must be at least 50 characters');
+      return;
+    }
+    
+    if (!formData.email && !formData.phone) {
+      setError('Please provide either an email or phone number');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
     setGeneratedContent(null);
 
     try {
       console.log('Making fetch request to /api/generate-content');
+      console.log('Sending data:', JSON.stringify(formData, null, 2));
+      
       const response = await fetch('/api/generate-content', {
         method: 'POST',
         headers: {
