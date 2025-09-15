@@ -4,6 +4,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -13,142 +14,161 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { keyword, sourceMaterial, affiliateLink, wordCount, publication, company, email, phone } = req.body;
+    console.log('=== EMPIRE INTELLIGENCE CONTENT GENERATION START ===');
+    
+    // Extract form data
+    const { keyword, sourceMaterial, affiliateLink, wordCount, publication } = req.body;
+    
+    console.log('Request data received:');
+    console.log('- Keyword:', keyword);
+    console.log('- Word Count:', wordCount);
+    console.log('- Publication:', publication);
+    console.log('- Affiliate Link:', affiliateLink ? 'Provided' : 'None');
+    console.log('- Source Material length:', sourceMaterial?.length || 0);
 
-    // Validation
-    if (!keyword) {
-      return res.status(400).json({ error: 'Keyword is required' });
+    // Validate required fields
+    if (!keyword || !sourceMaterial) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        details: 'Keyword and Source Material are required'
+      });
     }
 
-    if (!sourceMaterial || sourceMaterial.length < 50) {
-      return res.status(400).json({ error: 'Source material must be at least 50 characters' });
-    }
-
-    if (!publication) {
-      return res.status(400).json({ error: 'Publication is required' });
-    }
-
-    // Check for API key
+    // Check API key
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      console.error('Missing ANTHROPIC_API_KEY environment variable');
-      return res.status(500).json({ error: 'API configuration error' });
+      console.error('ANTHROPIC_API_KEY not found in environment variables');
+      return res.status(500).json({
+        error: 'Server configuration error',
+        details: 'API key not configured'
+      });
     }
 
-    const targetWords = parseInt(wordCount) || 8000;
+    console.log('API Key status:', apiKey ? 'Present' : 'Missing');
+    console.log('Making Claude API call...');
 
-    // Enhanced prompt with your requirements
-    const prompt = `You are a world-class content writer specializing in SEO-optimized, conversion-focused articles. Create a comprehensive ${targetWords}-word article about "${keyword}" using ONLY the provided source material as your factual foundation.
+    // Build enhanced content generation prompt
+    const prompt = `You are an expert SEO content writer and conversion specialist. Create a comprehensive, high-converting article about "${keyword}" that follows these EXACT requirements:
 
-CRITICAL REQUIREMENTS:
+## CRITICAL FORMATTING REQUIREMENTS:
 
-1. AFFILIATE LINK INTEGRATION: Include this affiliate link naturally throughout the content at least 3-4 times: "${affiliateLink}" 
-   Use compelling call-to-action phrases like "discover more here", "get started today", "try it now", "learn more".
+1. **"In This Article" Section**: Create a clean, professional section titled "In This Article, You'll Discover:" featuring 6-7 sentence-style lines. Do NOT use any bullet symbols (•, –, *, etc.) or emojis. Each line should be a full sentence or clause, start with a capital letter, and be formatted as standalone lines without special characters. Example format:
 
-2. "IN THIS ARTICLE" SECTION - EXACT FORMAT REQUIRED:
-   Create a section titled "In This Article, You'll Discover:" with 6-7 sentence-style points.
-   DO NOT use bullet symbols (•, –, *, etc.) or emojis.
-   Each line should be a complete sentence starting with a capital letter.
-   Format as standalone lines with NO special characters in front.
+In This Article, You'll Discover:
+The complete science behind mushroom gummies and their cognitive benefits
+How leading brands are revolutionizing wellness through innovative formulations
+Expert analysis of the top-performing mushroom gummy products in 2025
+Clinical research findings that support mushroom supplementation claims
+Professional recommendations for choosing the right mushroom gummies
+Common mistakes people make when selecting wellness supplements
+Why timing and dosage matter for optimal cognitive enhancement results
 
-3. FOUR-GOAL STRUCTURE: 
-   - Goal 1: Educate about ${keyword} and their benefits
-   - Goal 2: Build trust through science, ingredients, and testimonials  
-   - Goal 3: Address concerns through comparisons, safety, and FAQs
-   - Goal 4: Drive action with clear purchasing guidance and affiliate links
+2. **Affiliate Link Integration**: ${affiliateLink ? `Naturally integrate this affiliate link throughout the content: ${affiliateLink}. Include it in:
+- A compelling call-to-action in the introduction
+- Product recommendation sections
+- Conclusion with strong conversion language
+- Use phrases like "Based on our extensive research, we recommend..." and "Click here to learn more about our top recommendation"` : 'Include general calls-to-action without specific affiliate links'}
 
-4. SEO OPTIMIZATION:
-   - Use "${keyword}" as primary keyword throughout (natural density 1-2%)
-   - Include variations like "best ${keyword}", "${keyword} benefits", "${keyword} reviews"
-   - Create compelling, keyword-rich headers
+3. **4-Goal Content Structure**:
+   - GOAL 1: EDUCATE (Establish expertise and provide valuable information)
+   - GOAL 2: BUILD TRUST (Include credentials, research, testimonials)
+   - GOAL 3: ADDRESS CONCERNS (Handle objections and hesitations)
+   - GOAL 4: DRIVE ACTION (Multiple compelling CTAs with urgency)
 
-5. CONVERSION ELEMENTS:
-   - Multiple compelling calls-to-action with the affiliate link
-   - Social proof and testimonials from the source material
-   - Clear value propositions and benefits
-   - Urgency and scarcity where appropriate
+4. **Word Count**: Target approximately ${wordCount || '8000'} words with comprehensive coverage
 
-6. PROFESSIONAL STRUCTURE:
-   - SEO-optimized title
-   - "In This Article, You'll Discover:" section (exact clean format above)
-   - TLDR section with key benefits
-   - 8-12 substantial sections with descriptive headers
-   - Comprehensive FAQ section
-   - Strong conclusion with affiliate link CTA
+5. **SEO Optimization**: 
+   - Use "${keyword}" and semantic variations throughout
+   - Include related keywords naturally
+   - Optimize for search intent and user engagement
+   - Create scannable headings and subheadings
 
-7. FACTUAL ACCURACY: Base ALL claims strictly on the provided source material. Do not invent facts.
-
-8. COMPLIANCE: Include health disclaimers and FTC affiliate disclosure.
-
-SOURCE MATERIAL:
+## SOURCE MATERIAL TO USE:
 ${sourceMaterial}
 
-AFFILIATE LINK: ${affiliateLink}
-PUBLICATION: ${publication}
-TARGET: ${targetWords} words
+## CONTENT REQUIREMENTS:
+- Write in an authoritative, professional tone
+- Include health disclaimers where appropriate
+- Add FTC compliance language for affiliate recommendations
+- Use compelling headlines and subheadings
+- Include specific product details and benefits
+- Create urgency and social proof elements
+- End with strong conversion-focused conclusion
 
-Create compelling, conversion-focused content that naturally guides readers to the affiliate link while providing genuine value and maintaining SEO optimization.`;
+## CRITICAL: 
+- Follow the exact "In This Article" format shown above (no bullets, clean sentences)
+- Integrate affiliate links naturally with compelling CTAs
+- Ensure content flows logically through the 4-goal structure
+- Make the content highly engaging and conversion-focused
 
-    console.log('Making request to Claude API...');
+Create the complete article now:`;
 
+    // Make Claude API call with correct headers
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',  // THIS WAS THE MISSING HEADER!
+        'anthropic-version': '2023-06-01'  // CRITICAL: This header was missing!
       },
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
-        max_tokens: 8000,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
+        max_tokens: 4000,
+        messages: [{
+          role: 'user',
+          content: prompt
+        }]
       })
     });
 
+    console.log('Claude API response status:', response.status);
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Claude API Error:', response.status, response.statusText, errorData);
-      return res.status(500).json({ 
-        error: `Content generation failed: ${response.status}`,
-        details: errorData.error || response.statusText
+      const errorText = await response.text();
+      console.error('Claude API Error Response:', errorText);
+      return res.status(response.status).json({
+        error: 'Content generation failed',
+        details: `API Error ${response.status}: ${errorText}`
       });
     }
 
     const data = await response.json();
-    const generatedContent = data.content?.[0]?.text;
-
-    if (!generatedContent) {
-      console.error('No content in Claude response:', data);
-      return res.status(500).json({ error: 'No content generated from API' });
+    console.log('Claude API response received successfully');
+    
+    if (!data.content || !data.content[0] || !data.content[0].text) {
+      console.error('Invalid response structure from Claude API:', data);
+      return res.status(500).json({
+        error: 'Invalid response from content generation service',
+        details: 'Response structure was unexpected'
+      });
     }
 
-    // Estimate word count
-    const estimatedWordCount = generatedContent.split(/\s+/).length;
+    const generatedContent = data.content[0].text;
+    console.log('Content generated successfully, length:', generatedContent.length);
 
-    console.log(`Content generated successfully: ${estimatedWordCount} words`);
-    
+    console.log('=== EMPIRE INTELLIGENCE CONTENT GENERATION SUCCESS ===');
+
+    // Return successful response
     return res.status(200).json({
       success: true,
       content: generatedContent,
       metadata: {
-        wordCount: estimatedWordCount,
-        keyword,
-        publication,
-        affiliateLink: affiliateLink || 'None provided',
-        generatedAt: new Date().toISOString()
+        wordCount: generatedContent.split(' ').length,
+        keyword: keyword,
+        timestamp: new Date().toISOString(),
+        affiliateLinkUsed: !!affiliateLink
       }
     });
 
   } catch (error) {
-    console.error('Error in generate-content API:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
+    console.error('=== EMPIRE INTELLIGENCE SYSTEM ERROR ===');
+    console.error('Error details:', error.message);
+    console.error('Stack trace:', error.stack);
+
+    return res.status(500).json({
+      error: 'Content generation failed',
+      details: error.message,
+      timestamp: new Date().toISOString()
     });
   }
 }
