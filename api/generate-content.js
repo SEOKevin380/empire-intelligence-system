@@ -1,5 +1,5 @@
-// api/generate-content.js - SOURCE MATERIAL FOCUSED VERSION
-// Replace your entire file with this code
+// api/generate-content.js - FINAL DEBUG VERSION
+// This will accept ANY field names and show exactly what's being received
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -17,113 +17,117 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('=== SOURCE MATERIAL FOCUSED CONTENT GENERATION ===');
-    
+    console.log('=== FINAL DEBUG - COMPLETE REQUEST ANALYSIS ===');
+    console.log('Request body keys:', Object.keys(req.body || {}));
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+
     if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(500).json({ error: 'API key not configured' });
     }
 
     const data = req.body || {};
-    const keyword = data.keyword || data.topic || data['Target Keyword'] || '';
-    const sourceMaterial = data.sourceMaterial || data.source_material || data['Source Material'] || data.sourcematerial || '';
+
+    // Try EVERY possible field name variation
+    const keyword = data.keyword || data.topic || data['Target Keyword'] || data.targetKeyword || data['target-keyword'] || '';
+    
+    // Try ALL possible source material field names
+    const sourceMaterial = data.sourceMaterial || 
+                          data.source_material || 
+                          data['Source Material'] || 
+                          data.sourcematerial || 
+                          data['source-material'] || 
+                          data.sourceContent ||
+                          data.content ||
+                          data.material ||
+                          data.text ||
+                          '';
+
     const affiliateLink = data.affiliateLink || data.affiliate_link || data['Affiliate Link'] || '';
-    const sourceUrl = data.sourceUrl || data.source_url || data['Source URL'] || '';
-    const niche = data.niche || 'general';
-    const wordCount = data.wordCount || data.word_count || data['Word Count Target'] || 4000;
+    const wordCount = parseInt(data.wordCount || data.word_count || data['Word Count Target'] || 8000);
+    const niche = data.niche || data.publication || 'health';
 
-    console.log('DEBUG - All form data received:', Object.keys(data));
-    console.log('DEBUG - Source material length:', sourceMaterial.length);
-    console.log('DEBUG - Source material preview:', sourceMaterial.substring(0, 100));
+    console.log('=== EXTRACTED VALUES ===');
+    console.log('Keyword:', keyword);
+    console.log('Source Material Length:', sourceMaterial.length);
+    console.log('Source Material Preview:', sourceMaterial.substring(0, 200));
+    console.log('Affiliate Link:', affiliateLink);
+    console.log('Word Count:', wordCount);
 
-    // CRITICAL: Require source material for accuracy - but check multiple field variations
-    if (!sourceMaterial || sourceMaterial.length < 50) {
-      console.log('ERROR - Source material missing or too short');
-      console.log('Available fields:', Object.keys(data));
-      return res.status(400).json({ 
-        error: 'Source material is required and must be substantial',
-        message: 'Please provide detailed source material (minimum 50 characters) to ensure 100% factual accuracy',
-        debugInfo: {
-          receivedFields: Object.keys(data),
-          sourceMaterialLength: sourceMaterial.length
-        }
-      });
-    }
-
+    // More lenient validation
     if (!keyword) {
       return res.status(400).json({ 
-        error: 'Keyword/topic is required',
-        message: 'Please provide a target keyword or topic'
+        error: 'Keyword is required',
+        receivedData: Object.keys(data),
+        debug: 'No keyword found in any expected field'
       });
     }
 
-    console.log(`Generating article about: ${keyword}`);
-    console.log(`Using source material: ${sourceMaterial.substring(0, 100)}...`);
+    if (!sourceMaterial || sourceMaterial.length < 10) {
+      return res.status(400).json({ 
+        error: 'Source material is too short or missing',
+        receivedFields: Object.keys(data),
+        sourceMaterialFound: sourceMaterial,
+        debug: 'Need substantial source material for accuracy'
+      });
+    }
 
-    // Build prompt that PRIORITIZES source material accuracy
-    const prompt = `You are an expert content writer specializing in creating SEO-optimized articles with 100% factual accuracy based on provided source material.
+    console.log('✅ Validation passed, generating content...');
 
-CRITICAL REQUIREMENT: You MUST base your entire article on the SOURCE MATERIAL provided below. Do NOT add information that is not supported by the source material. Ensure 100% factual accuracy to the source content.
+    // Build comprehensive prompt based on your source material
+    const prompt = `You are an expert content writer specializing in SEO-optimized articles with 100% factual accuracy.
 
-SOURCE MATERIAL (THIS IS YOUR FOUNDATION - BE 100% ACCURATE):
+CRITICAL INSTRUCTION: Create content based ONLY on the provided source material. Do NOT add information not supported by the source material.
+
+SOURCE MATERIAL (YOUR FOUNDATION):
 ${sourceMaterial}
 
 ARTICLE SPECIFICATIONS:
-- Primary Focus Keyword: "${keyword}"
-- Target Niche: ${niche}
+- Primary Keyword: "${keyword}"
 - Target Word Count: ${wordCount} words minimum
-- Format: Professional, SEO-optimized article
+- Style: Professional, SEO-optimized
+- Niche: Health & Wellness Supplements
 
-${affiliateLink ? `AFFILIATE LINK TO NATURALLY INTEGRATE: ${affiliateLink}` : ''}
-${sourceUrl ? `SOURCE URL FOR ATTRIBUTION: ${sourceUrl}` : ''}
+${affiliateLink ? `AFFILIATE LINK TO INTEGRATE: ${affiliateLink}` : ''}
 
-MANDATORY ARTICLE STRUCTURE:
+MANDATORY STRUCTURE (Your Aggressive SEO Template):
 1. **In This Article, You'll Discover:** (5-8 bullet points based on source material)
-2. **TLDR Summary** (2-3 sentences summarizing key points from source material with focus keyword)
-3. **Introduction** (engaging opening that introduces the topic using source material facts)
-4. **What is ${keyword}?** (comprehensive explanation based ONLY on source material)
-5. **Key Benefits of ${keyword}** (benefits mentioned in source material ONLY)
-6. **How ${keyword} Works** (mechanism/process from source material)
-7. **${keyword} Research and Studies** (any research mentioned in source material)
-8. **${keyword} vs Alternatives** (comparisons only if mentioned in source material)
-9. **How to Use ${keyword}** (usage information from source material)
-10. **Potential Side Effects and Safety** (safety info from source material with disclaimers)
-11. **Where to Buy ${keyword}** (include affiliate link if provided)
-12. **Frequently Asked Questions** (FAQs based on source material)
-13. **Final Thoughts**
+2. **TLDR Summary** (Focus keyword embedded, based on source material)
+3. **Introduction** (Hook with focus keyword, using source facts)
+4. **What are ${keyword}?** (Based on source material only)
+5. **Key Benefits of ${keyword}** (Only benefits mentioned in source material)
+6. **How ${keyword} Work** (Mechanism from source material)
+7. **${keyword} Ingredients and Formula** (Based on source material)
+8. **${keyword} vs Alternatives** (Only if mentioned in source material)
+9. **How to Use ${keyword}** (Usage info from source material)
+10. **Safety and Side Effects** (From source material + required disclaimers)
+11. **Where to Buy ${keyword}** (Include affiliate link if provided)
+12. **Frequently Asked Questions** (Based on source material)
+13. **Conclusion**
 
 FORMATTING REQUIREMENTS:
-- Bold all headings with **text**
-- Bold important terms and links
+- **Bold all headings**
+- **Bold important links**
 - NO emojis - professional formatting only
-- Minimum ${wordCount} words
-- Include focus keyword "${keyword}" naturally throughout (1-2% density)
-- Use related terms from the source material as supporting keywords
+- Target ${wordCount}+ words
+- Include "${keyword}" naturally throughout (1-2% density)
+- Use related terms from source material
+
+REQUIRED DISCLAIMERS:
+- Health: "This information is not intended to diagnose, treat, cure, or prevent any disease. Consult with a healthcare professional before use."
+- Pricing: "Prices subject to change. Check official website for current pricing."
+- General: "Individual results may vary."
 
 ACCURACY REQUIREMENTS:
-- Use ONLY information from the provided source material
-- Do NOT add claims not supported by source material
-- If source material lacks information for a section, state "Based on available information..." or similar
-- Include appropriate disclaimers for health/medical claims
-- Add pricing disclaimers where applicable
+- Use ONLY information from provided source material
+- Expand thoroughly on each point from source material
+- If source lacks info for a section, note "Based on available information..."
+- Maintain 100% factual accuracy to source content
 
-DISCLAIMERS TO INCLUDE:
-- Health/Medical: "This information is not intended to diagnose, treat, cure, or prevent any disease. Consult with a healthcare professional before starting any new supplement or health regimen."
-- Pricing: "Prices are subject to change. Please check the official website for current pricing information."
-- General: "The information in this article is based on available research and should not replace professional advice."
-
-SEO OPTIMIZATION:
-- Natural integration of focus keyword throughout content
-- Use semantic variations and related terms from source material
-- Include internal linking opportunities where relevant
-- Create engaging, click-worthy headings while maintaining accuracy
-
-Create a comprehensive, SEO-optimized article that expands upon the source material while maintaining 100% factual accuracy. Achieve the target word count by thoroughly explaining the concepts from the source material, providing detailed coverage of each point, and ensuring comprehensive exploration of all aspects mentioned in the source content.
-
-Begin writing the complete article now:`;
+Create the complete article now, achieving ${wordCount}+ words by thoroughly explaining all concepts from the source material:`;
 
     const messages = [{ role: "user", content: prompt }];
 
-    console.log('Calling Anthropic API with source-focused prompt...');
+    console.log('🤖 Calling Anthropic API...');
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -136,13 +140,13 @@ Begin writing the complete article now:`;
         model: "claude-sonnet-4-20250514",
         max_tokens: 8000,
         messages: messages,
-        temperature: 0.2 // Lower temperature for more factual, accurate content
+        temperature: 0.2
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Anthropic API error:', response.status, errorText);
+      console.error('❌ Anthropic API error:', response.status, errorText);
       return res.status(500).json({ 
         error: 'Content generation failed',
         status: response.status,
@@ -154,33 +158,16 @@ Begin writing the complete article now:`;
     const content = result.content[0].text;
     const actualWordCount = content.split(' ').length;
 
-    // Quality checks focused on source material usage
-    const qualityChecks = {
-      hasInThisArticle: content.includes('In This Article, You\'ll Discover:'),
-      hasTLDR: content.includes('TLDR') || content.includes('TL;DR'),
-      hasKeyword: content.toLowerCase().includes(keyword.toLowerCase()),
-      hasBoldHeadings: content.includes('**'),
-      meetWordCount: actualWordCount >= (wordCount * 0.8),
-      hasDisclaimers: content.includes('not intended to diagnose') || content.includes('Consult with a healthcare')
-    };
-
-    const qualityScore = (Object.values(qualityChecks).filter(Boolean).length / Object.values(qualityChecks).length) * 100;
-
-    console.log(`Content generated - Word count: ${actualWordCount}, Quality: ${qualityScore.toFixed(1)}%`);
+    console.log('✅ Content generated successfully');
+    console.log('📊 Word count:', actualWordCount);
 
     return res.status(200).json({
       success: true,
       content: content,
-      qualityAssurance: {
+      metadata: {
         wordCount: actualWordCount,
         targetWordCount: wordCount,
-        qualityScore: qualityScore.toFixed(1) + '%',
-        checks: qualityChecks,
-        sourceBasedGeneration: true
-      },
-      metadata: {
         keyword: keyword,
-        niche: niche,
         sourceMaterialLength: sourceMaterial.length,
         hasAffiliateLink: !!affiliateLink,
         generatedAt: new Date().toISOString()
@@ -188,10 +175,11 @@ Begin writing the complete article now:`;
     });
 
   } catch (error) {
-    console.error('Content generation error:', error);
+    console.error('💥 Server error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message
+      message: error.message,
+      stack: error.stack?.substring(0, 500)
     });
   }
 }
