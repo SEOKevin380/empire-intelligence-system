@@ -1,8 +1,7 @@
-// api/generate-content.js - RELIABLE SIMPLIFIED VERSION
+// api/generate-content.js - SOURCE MATERIAL FOCUSED VERSION
 // Replace your entire file with this code
 
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -18,71 +17,103 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Content generation request received');
+    console.log('=== SOURCE MATERIAL FOCUSED CONTENT GENERATION ===');
     
-    // Check API key
     if (!process.env.ANTHROPIC_API_KEY) {
-      console.error('No API key found');
       return res.status(500).json({ error: 'API key not configured' });
     }
 
-    // Extract data with fallbacks
     const data = req.body || {};
-    const keyword = data.keyword || data.topic || 'content topic';
-    const niche = data.niche || 'general';
+    const keyword = data.keyword || data.topic || '';
     const sourceMaterial = data.sourceMaterial || data.source_material || '';
     const affiliateLink = data.affiliateLink || data.affiliate_link || '';
+    const sourceUrl = data.sourceUrl || data.source_url || '';
+    const niche = data.niche || 'general';
     const wordCount = data.wordCount || data.word_count || 4000;
 
-    console.log(`Generating content for: ${keyword}`);
+    // CRITICAL: Require source material for accuracy
+    if (!sourceMaterial) {
+      return res.status(400).json({ 
+        error: 'Source material is required',
+        message: 'Please provide source material to ensure 100% factual accuracy'
+      });
+    }
 
-    // Build SEO-optimized prompt
-    const prompt = `You are an expert content creator and SEO specialist. Create a comprehensive, SEO-optimized article with these requirements:
+    if (!keyword) {
+      return res.status(400).json({ 
+        error: 'Keyword/topic is required',
+        message: 'Please provide a target keyword or topic'
+      });
+    }
 
-ARTICLE REQUIREMENTS:
-- Topic/Focus Keyword: "${keyword}"
-- Niche: ${niche}
+    console.log(`Generating article about: ${keyword}`);
+    console.log(`Using source material: ${sourceMaterial.substring(0, 100)}...`);
+
+    // Build prompt that PRIORITIZES source material accuracy
+    const prompt = `You are an expert content writer specializing in creating SEO-optimized articles with 100% factual accuracy based on provided source material.
+
+CRITICAL REQUIREMENT: You MUST base your entire article on the SOURCE MATERIAL provided below. Do NOT add information that is not supported by the source material. Ensure 100% factual accuracy to the source content.
+
+SOURCE MATERIAL (THIS IS YOUR FOUNDATION - BE 100% ACCURATE):
+${sourceMaterial}
+
+ARTICLE SPECIFICATIONS:
+- Primary Focus Keyword: "${keyword}"
+- Target Niche: ${niche}
 - Target Word Count: ${wordCount} words minimum
-- Format: Professional article with SEO optimization
+- Format: Professional, SEO-optimized article
 
-${sourceMaterial ? `SOURCE MATERIAL (ensure 100% accuracy):
-${sourceMaterial}` : ''}
+${affiliateLink ? `AFFILIATE LINK TO NATURALLY INTEGRATE: ${affiliateLink}` : ''}
+${sourceUrl ? `SOURCE URL FOR ATTRIBUTION: ${sourceUrl}` : ''}
 
-${affiliateLink ? `AFFILIATE LINK TO INTEGRATE: ${affiliateLink}` : ''}
-
-MANDATORY STRUCTURE:
-1. **In This Article, You'll Discover:** (bullet points outlining key topics)
-2. **TLDR Summary** (brief overview with focus keywords)
-3. **Introduction** (engaging hook with focus keyword)
-4. **Main Content Sections** (comprehensive coverage with bold headings)
-5. **Benefits and Features** (detailed explanation)
-6. **How It Works** (mechanism or process)
-7. **Comparison with Alternatives** 
-8. **Usage Guidelines** (if applicable)
-9. **Safety and Side Effects** (with disclaimers for health topics)
-10. **Where to Purchase** (include affiliate link if provided)
-11. **FAQ Section**
-12. **Conclusion**
+MANDATORY ARTICLE STRUCTURE:
+1. **In This Article, You'll Discover:** (5-8 bullet points based on source material)
+2. **TLDR Summary** (2-3 sentences summarizing key points from source material with focus keyword)
+3. **Introduction** (engaging opening that introduces the topic using source material facts)
+4. **What is ${keyword}?** (comprehensive explanation based ONLY on source material)
+5. **Key Benefits of ${keyword}** (benefits mentioned in source material ONLY)
+6. **How ${keyword} Works** (mechanism/process from source material)
+7. **${keyword} Research and Studies** (any research mentioned in source material)
+8. **${keyword} vs Alternatives** (comparisons only if mentioned in source material)
+9. **How to Use ${keyword}** (usage information from source material)
+10. **Potential Side Effects and Safety** (safety info from source material with disclaimers)
+11. **Where to Buy ${keyword}** (include affiliate link if provided)
+12. **Frequently Asked Questions** (FAQs based on source material)
+13. **Final Thoughts**
 
 FORMATTING REQUIREMENTS:
-- Bold all headings using **text**
-- Bold important links
+- Bold all headings with **text**
+- Bold important terms and links
 - NO emojis - professional formatting only
-- Include appropriate disclaimers for health/financial claims
+- Minimum ${wordCount} words
+- Include focus keyword "${keyword}" naturally throughout (1-2% density)
+- Use related terms from the source material as supporting keywords
+
+ACCURACY REQUIREMENTS:
+- Use ONLY information from the provided source material
+- Do NOT add claims not supported by source material
+- If source material lacks information for a section, state "Based on available information..." or similar
+- Include appropriate disclaimers for health/medical claims
 - Add pricing disclaimers where applicable
-- Ensure minimum ${wordCount} words
-- Natural keyword integration (avoid stuffing)
-- Include related semantic keywords
 
 DISCLAIMERS TO INCLUDE:
-- Health topics: "This information is not intended to diagnose, treat, cure, or prevent any disease. Consult with a healthcare professional before use."
-- Pricing: "Prices subject to change. Check official website for current pricing."
+- Health/Medical: "This information is not intended to diagnose, treat, cure, or prevent any disease. Consult with a healthcare professional before starting any new supplement or health regimen."
+- Pricing: "Prices are subject to change. Please check the official website for current pricing information."
+- General: "The information in this article is based on available research and should not replace professional advice."
 
-Create the complete article now, ensuring all requirements are met.`;
+SEO OPTIMIZATION:
+- Natural integration of focus keyword throughout content
+- Use semantic variations and related terms from source material
+- Include internal linking opportunities where relevant
+- Create engaging, click-worthy headings while maintaining accuracy
+
+Create a comprehensive, SEO-optimized article that expands upon the source material while maintaining 100% factual accuracy. Achieve the target word count by thoroughly explaining the concepts from the source material, providing detailed coverage of each point, and ensuring comprehensive exploration of all aspects mentioned in the source content.
+
+Begin writing the complete article now:`;
 
     const messages = [{ role: "user", content: prompt }];
 
-    console.log('Calling Anthropic API...');
+    console.log('Calling Anthropic API with source-focused prompt...');
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -94,7 +125,8 @@ Create the complete article now, ensuring all requirements are met.`;
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
         max_tokens: 8000,
-        messages: messages
+        messages: messages,
+        temperature: 0.2 // Lower temperature for more factual, accurate content
       })
     });
 
@@ -103,7 +135,8 @@ Create the complete article now, ensuring all requirements are met.`;
       console.error('Anthropic API error:', response.status, errorText);
       return res.status(500).json({ 
         error: 'Content generation failed',
-        status: response.status
+        status: response.status,
+        details: errorText.substring(0, 200)
       });
     }
 
@@ -111,23 +144,41 @@ Create the complete article now, ensuring all requirements are met.`;
     const content = result.content[0].text;
     const actualWordCount = content.split(' ').length;
 
-    console.log(`Content generated successfully. Word count: ${actualWordCount}`);
+    // Quality checks focused on source material usage
+    const qualityChecks = {
+      hasInThisArticle: content.includes('In This Article, You\'ll Discover:'),
+      hasTLDR: content.includes('TLDR') || content.includes('TL;DR'),
+      hasKeyword: content.toLowerCase().includes(keyword.toLowerCase()),
+      hasBoldHeadings: content.includes('**'),
+      meetWordCount: actualWordCount >= (wordCount * 0.8),
+      hasDisclaimers: content.includes('not intended to diagnose') || content.includes('Consult with a healthcare')
+    };
 
-    // Return success response
+    const qualityScore = (Object.values(qualityChecks).filter(Boolean).length / Object.values(qualityChecks).length) * 100;
+
+    console.log(`Content generated - Word count: ${actualWordCount}, Quality: ${qualityScore.toFixed(1)}%`);
+
     return res.status(200).json({
       success: true,
       content: content,
-      metadata: {
+      qualityAssurance: {
         wordCount: actualWordCount,
         targetWordCount: wordCount,
+        qualityScore: qualityScore.toFixed(1) + '%',
+        checks: qualityChecks,
+        sourceBasedGeneration: true
+      },
+      metadata: {
         keyword: keyword,
         niche: niche,
+        sourceMaterialLength: sourceMaterial.length,
+        hasAffiliateLink: !!affiliateLink,
         generatedAt: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error('Server error:', error);
+    console.error('Content generation error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
       message: error.message
