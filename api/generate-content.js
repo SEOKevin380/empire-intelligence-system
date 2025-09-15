@@ -24,18 +24,28 @@ export default async function handler(req, res) {
     }
 
     const data = req.body || {};
-    const keyword = data.keyword || data.topic || '';
-    const sourceMaterial = data.sourceMaterial || data.source_material || '';
-    const affiliateLink = data.affiliateLink || data.affiliate_link || '';
-    const sourceUrl = data.sourceUrl || data.source_url || '';
+    const keyword = data.keyword || data.topic || data['Target Keyword'] || '';
+    const sourceMaterial = data.sourceMaterial || data.source_material || data['Source Material'] || data.sourcematerial || '';
+    const affiliateLink = data.affiliateLink || data.affiliate_link || data['Affiliate Link'] || '';
+    const sourceUrl = data.sourceUrl || data.source_url || data['Source URL'] || '';
     const niche = data.niche || 'general';
-    const wordCount = data.wordCount || data.word_count || 4000;
+    const wordCount = data.wordCount || data.word_count || data['Word Count Target'] || 4000;
 
-    // CRITICAL: Require source material for accuracy
-    if (!sourceMaterial) {
+    console.log('DEBUG - All form data received:', Object.keys(data));
+    console.log('DEBUG - Source material length:', sourceMaterial.length);
+    console.log('DEBUG - Source material preview:', sourceMaterial.substring(0, 100));
+
+    // CRITICAL: Require source material for accuracy - but check multiple field variations
+    if (!sourceMaterial || sourceMaterial.length < 50) {
+      console.log('ERROR - Source material missing or too short');
+      console.log('Available fields:', Object.keys(data));
       return res.status(400).json({ 
-        error: 'Source material is required',
-        message: 'Please provide source material to ensure 100% factual accuracy'
+        error: 'Source material is required and must be substantial',
+        message: 'Please provide detailed source material (minimum 50 characters) to ensure 100% factual accuracy',
+        debugInfo: {
+          receivedFields: Object.keys(data),
+          sourceMaterialLength: sourceMaterial.length
+        }
       });
     }
 
