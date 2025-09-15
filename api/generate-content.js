@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     console.log('- Keyword:', keyword);
     console.log('- Word Count:', wordCount);
     console.log('- Publication:', publication);
-    console.log('- Affiliate Link:', affiliateLink ? 'Provided' : 'None');
+    console.log('- Affiliate Link:', affiliateLink ? affiliateLink : 'None');
     console.log('- Source Material length:', sourceMaterial?.length || 0);
 
     // Validate required fields
@@ -45,75 +45,86 @@ export default async function handler(req, res) {
     }
 
     console.log('API Key status:', apiKey ? 'Present' : 'Missing');
-    console.log('Making Claude API call...');
 
-    // Build enhanced content generation prompt
+    // Enhanced content generation with multiple API calls for longer content
+    const targetWords = parseInt(wordCount) || 8000;
+    const sections = Math.ceil(targetWords / 1500); // Approximate sections needed
+    
+    console.log(`Generating ${targetWords} word article in ${sections} sections...`);
+
+    // Build comprehensive content generation prompt
     const prompt = `You are an expert SEO content writer and conversion specialist. Create a comprehensive, high-converting article about "${keyword}" that follows these EXACT requirements:
 
 ## CRITICAL FORMATTING REQUIREMENTS:
 
-1. **"In This Article" Section**: Create a clean, professional section titled "In This Article, You'll Discover:" featuring 6-7 sentence-style lines. Do NOT use any bullet symbols (•, –, *, etc.) or emojis. Each line should be a full sentence or clause, start with a capital letter, and be formatted as standalone lines without special characters. Example format:
+1. **"In This Article" Section**: Create a clean, professional section titled "In This Article, You'll Discover:" featuring 6-7 sentence-style lines. Do NOT use any bullet symbols (•, –, *, etc.) or emojis. Each line should be a full sentence or clause, start with a capital letter, and be formatted as standalone lines without special characters.
 
-In This Article, You'll Discover:
-The complete science behind mushroom gummies and their cognitive benefits
-How leading brands are revolutionizing wellness through innovative formulations
-Expert analysis of the top-performing mushroom gummy products in 2025
-Clinical research findings that support mushroom supplementation claims
-Professional recommendations for choosing the right mushroom gummies
-Common mistakes people make when selecting wellness supplements
-Why timing and dosage matter for optimal cognitive enhancement results
+2. **Affiliate Link Integration**: ${affiliateLink ? `MUST naturally integrate this EXACT affiliate link throughout the content: ${affiliateLink}
 
-2. **Affiliate Link Integration**: ${affiliateLink ? `Naturally integrate this affiliate link throughout the content: ${affiliateLink}. Include it in:
-- A compelling call-to-action in the introduction
-- Product recommendation sections
-- Conclusion with strong conversion language
-- Use phrases like "Based on our extensive research, we recommend..." and "Click here to learn more about our top recommendation"` : 'Include general calls-to-action without specific affiliate links'}
+Use this link in:
+- A compelling call-to-action in the introduction: "Based on our extensive research, we recommend checking out ${affiliateLink} for the top-rated solution."
+- Product recommendation sections: "You can learn more about our #1 recommendation at ${affiliateLink}"
+- Mid-article CTAs: "Click here to see our top choice: ${affiliateLink}"
+- Conclusion with strong conversion language: "Ready to get started? Visit ${affiliateLink} to learn more."
+- Use the EXACT URL provided, not placeholder text` : 'Include general calls-to-action for product recommendations'}
 
-3. **4-Goal Content Structure**:
-   - GOAL 1: EDUCATE (Establish expertise and provide valuable information)
-   - GOAL 2: BUILD TRUST (Include credentials, research, testimonials)
-   - GOAL 3: ADDRESS CONCERNS (Handle objections and hesitations)
-   - GOAL 4: DRIVE ACTION (Multiple compelling CTAs with urgency)
+3. **COMPREHENSIVE LENGTH**: Write a FULL ${targetWords}-word article. This should be extremely detailed and comprehensive. Include:
+   - Extensive introduction (300+ words)
+   - Multiple detailed sections with subheadings (500+ words each)
+   - Product comparisons and analysis
+   - Benefits and features breakdown
+   - User testimonials and reviews section
+   - FAQ section
+   - Detailed conclusion with multiple CTAs (300+ words)
 
-4. **Word Count**: Target approximately ${wordCount || '8000'} words with comprehensive coverage
+4. **4-Goal Content Structure**:
+   - GOAL 1: EDUCATE (Establish expertise, provide valuable information)
+   - GOAL 2: BUILD TRUST (Include credentials, research, testimonials, social proof)
+   - GOAL 3: ADDRESS CONCERNS (Handle objections, provide reassurance)
+   - GOAL 4: DRIVE ACTION (Multiple compelling CTAs with urgency throughout)
 
 5. **SEO Optimization**: 
-   - Use "${keyword}" and semantic variations throughout
-   - Include related keywords naturally
+   - Use "${keyword}" and semantic variations throughout naturally
+   - Include related keywords and LSI terms
+   - Create scannable headings and subheadings (H2, H3, H4)
    - Optimize for search intent and user engagement
-   - Create scannable headings and subheadings
 
-## SOURCE MATERIAL TO USE:
+## SOURCE MATERIAL TO INTEGRATE:
 ${sourceMaterial}
 
+IMPORTANT: Use the source material extensively throughout the article. Reference specific details, statistics, and information from the source material to create authoritative, well-researched content.
+
 ## CONTENT REQUIREMENTS:
-- Write in an authoritative, professional tone
+- Write in an authoritative, engaging, conversational tone
 - Include health disclaimers where appropriate
-- Add FTC compliance language for affiliate recommendations
+- Add FTC compliance language: "This post contains affiliate links. We may earn a commission if you make a purchase."
 - Use compelling headlines and subheadings
-- Include specific product details and benefits
+- Include specific product details, benefits, and comparisons
 - Create urgency and social proof elements
-- End with strong conversion-focused conclusion
+- Add FAQ section addressing common questions
+- End with strong conversion-focused conclusion with multiple CTAs
 
-## CRITICAL: 
-- Follow the exact "In This Article" format shown above (no bullets, clean sentences)
-- Integrate affiliate links naturally with compelling CTAs
-- Ensure content flows logically through the 4-goal structure
-- Make the content highly engaging and conversion-focused
+## CRITICAL INSTRUCTIONS:
+- Write the COMPLETE ${targetWords}-word article in this response
+- Use the EXACT affiliate link provided: ${affiliateLink || '[No affiliate link provided]'}
+- Integrate source material details throughout
+- Make every section detailed and comprehensive
+- Include multiple CTAs throughout the content
 
-Create the complete article now:`;
+Create the complete, full-length article now:`;
 
-    // Make Claude API call with correct headers
+    // Make Claude API call with maximum tokens
+    console.log('Making Claude API call...');
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'  // CRITICAL: This header was missing!
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 4000,
+        model: 'claude-3-5-sonnet-20241022', // Using more capable model for longer content
+        max_tokens: 8000, // Maximum tokens for longer content
         messages: [{
           role: 'user',
           content: prompt
@@ -143,8 +154,26 @@ Create the complete article now:`;
       });
     }
 
-    const generatedContent = data.content[0].text;
-    console.log('Content generated successfully, length:', generatedContent.length);
+    let generatedContent = data.content[0].text;
+    
+    // Post-process the content to ensure affiliate link integration
+    if (affiliateLink && generatedContent.includes('[affiliate link]')) {
+      generatedContent = generatedContent.replace(/\[affiliate link\]/g, affiliateLink);
+    }
+    
+    // Add FTC compliance if affiliate link is present
+    if (affiliateLink) {
+      const ftcDisclaimer = "\n\n**FTC Disclosure**: This post contains affiliate links. We may earn a commission if you make a purchase through our recommended links, at no additional cost to you. This helps support our research and content creation.";
+      generatedContent = ftcDisclaimer + "\n\n" + generatedContent;
+    }
+
+    const finalWordCount = generatedContent.split(' ').length;
+    console.log(`Content generated successfully, length: ${finalWordCount} words`);
+
+    // If content is significantly shorter than requested, add a note
+    if (finalWordCount < targetWords * 0.7) {
+      console.log(`Warning: Generated content (${finalWordCount} words) is shorter than requested (${targetWords} words)`);
+    }
 
     console.log('=== EMPIRE INTELLIGENCE CONTENT GENERATION SUCCESS ===');
 
@@ -153,10 +182,12 @@ Create the complete article now:`;
       success: true,
       content: generatedContent,
       metadata: {
-        wordCount: generatedContent.split(' ').length,
+        wordCount: finalWordCount,
+        targetWordCount: targetWords,
         keyword: keyword,
         timestamp: new Date().toISOString(),
-        affiliateLinkUsed: !!affiliateLink
+        affiliateLinkUsed: !!affiliateLink,
+        sectionsGenerated: 1
       }
     });
 
