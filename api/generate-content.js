@@ -1,7 +1,8 @@
-// api/generate-content.js - ENHANCED VERSION WITH SEO COMPLIANCE
-// Replace your entire existing file with this code
+// api/generate-content.js - RELIABLE SIMPLIFIED VERSION
+// Replace your entire file with this code
 
 export default async function handler(req, res) {
+  // CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -17,132 +18,71 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('=== ENHANCED SEO CONTENT GENERATION ===');
-    console.log('Request data:', JSON.stringify(req.body, null, 2));
-
+    console.log('Content generation request received');
+    
+    // Check API key
     if (!process.env.ANTHROPIC_API_KEY) {
+      console.error('No API key found');
       return res.status(500).json({ error: 'API key not configured' });
     }
 
-    // Extract and validate required fields
-    const {
-      keyword,
-      topic,
-      niche,
-      contentType,
-      platform,
-      sourceMaterial,
-      affiliateLink,
-      sourceUrl,
-      wordCount = 4000,
-      targetAudience = 'general audience'
-    } = req.body || {};
+    // Extract data with fallbacks
+    const data = req.body || {};
+    const keyword = data.keyword || data.topic || 'content topic';
+    const niche = data.niche || 'general';
+    const sourceMaterial = data.sourceMaterial || data.source_material || '';
+    const affiliateLink = data.affiliateLink || data.affiliate_link || '';
+    const wordCount = data.wordCount || data.word_count || 4000;
 
-    const contentData = {
-      focusKeyword: keyword || topic,
-      niche: niche || 'general',
-      contentType: contentType || 'article',
-      platform: platform || 'website',
-      sourceMaterial: sourceMaterial || '',
-      affiliateLink: affiliateLink || '',
-      sourceUrl: sourceUrl || '',
-      targetWordCount: parseInt(wordCount) || 4000,
-      targetAudience
-    };
+    console.log(`Generating content for: ${keyword}`);
 
-    // Validate critical fields
-    if (!contentData.focusKeyword) {
-      return res.status(400).json({ 
-        error: 'Missing required field: keyword/topic is required' 
-      });
-    }
+    // Build SEO-optimized prompt
+    const prompt = `You are an expert content creator and SEO specialist. Create a comprehensive, SEO-optimized article with these requirements:
 
-    console.log('✅ Processing SEO-optimized content for:', contentData.focusKeyword);
+ARTICLE REQUIREMENTS:
+- Topic/Focus Keyword: "${keyword}"
+- Niche: ${niche}
+- Target Word Count: ${wordCount} words minimum
+- Format: Professional article with SEO optimization
 
-    // Build comprehensive SEO-focused prompt
-    const seoPrompt = `You are the world's foremost expert content creator and aggressive SEO strategist. Create a comprehensive, SEO-optimized article following these EXACT specifications:
+${sourceMaterial ? `SOURCE MATERIAL (ensure 100% accuracy):
+${sourceMaterial}` : ''}
 
-MANDATORY REQUIREMENTS:
-- Target word count: ${contentData.targetWordCount} words minimum
-- Focus keyword: "${contentData.focusKeyword}"
-- Niche: ${contentData.niche}
-- Content type: ${contentData.contentType}
-- Target platform: ${contentData.platform}
-- Target audience: ${contentData.targetAudience}
+${affiliateLink ? `AFFILIATE LINK TO INTEGRATE: ${affiliateLink}` : ''}
 
-${contentData.sourceMaterial ? `SOURCE MATERIAL (MUST BE 100% ACCURATE):
-${contentData.sourceMaterial}
+MANDATORY STRUCTURE:
+1. **In This Article, You'll Discover:** (bullet points outlining key topics)
+2. **TLDR Summary** (brief overview with focus keywords)
+3. **Introduction** (engaging hook with focus keyword)
+4. **Main Content Sections** (comprehensive coverage with bold headings)
+5. **Benefits and Features** (detailed explanation)
+6. **How It Works** (mechanism or process)
+7. **Comparison with Alternatives** 
+8. **Usage Guidelines** (if applicable)
+9. **Safety and Side Effects** (with disclaimers for health topics)
+10. **Where to Purchase** (include affiliate link if provided)
+11. **FAQ Section**
+12. **Conclusion**
 
-CRITICAL: Ensure complete factual accuracy to the source material above.` : ''}
+FORMATTING REQUIREMENTS:
+- Bold all headings using **text**
+- Bold important links
+- NO emojis - professional formatting only
+- Include appropriate disclaimers for health/financial claims
+- Add pricing disclaimers where applicable
+- Ensure minimum ${wordCount} words
+- Natural keyword integration (avoid stuffing)
+- Include related semantic keywords
 
-${contentData.affiliateLink ? `AFFILIATE LINK TO INTEGRATE: ${contentData.affiliateLink}` : ''}
-${contentData.sourceUrl ? `SOURCE URL FOR REFERENCE: ${contentData.sourceUrl}` : ''}
+DISCLAIMERS TO INCLUDE:
+- Health topics: "This information is not intended to diagnose, treat, cure, or prevent any disease. Consult with a healthcare professional before use."
+- Pricing: "Prices subject to change. Check official website for current pricing."
 
-AGGRESSIVE SEO TEMPLATE STRUCTURE (MANDATORY):
+Create the complete article now, ensuring all requirements are met.`;
 
-**GOAL 1:** Intent of article is to rank in search for "${contentData.focusKeyword}" focus keywords
-**GOAL 2:** Intent of article is to convert readers to buy "${contentData.focusKeyword}" so we monetize our article
-**GOAL 3:** Structure articles in the most aggressive SEO format, guiding readers from pain point to pain-free experience
-**GOAL 4:** Ensure all fact-checking processes so content is 100% factually correct
+    const messages = [{ role: "user", content: prompt }];
 
-MANDATORY FORMATTING REQUIREMENTS:
-1. Start with "In This Article, You'll Discover:" bullet points for intro
-2. Include TLDR summary with focus keywords embedded
-3. Bold ALL headings and links
-4. No emojis - clean and professional formatting only
-5. Add disclaimers for borderline medical claims
-6. Include pricing disclaimers where applicable
-7. Adhere to YMYL, FTC, and compliance regulations
-8. Embed focus keywords naturally throughout (avoid keyword stuffing)
-9. Include semantic LSI keywords related to the main focus keyword
-10. Create compelling, conversion-focused content that drives action
-
-ARTICLE STRUCTURE TEMPLATE:
-1. **In This Article, You'll Discover:** (bullet points)
-2. **TLDR Summary** (focus keywords embedded)
-3. **Introduction** (hook with focus keywords)
-4. **[Focus Keyword] Overview** (comprehensive explanation)
-5. **Benefits of [Focus Keyword]** (detailed benefits section)
-6. **How [Focus Keyword] Works** (mechanism/process)
-7. **[Focus Keyword] vs Alternatives** (comparison section)
-8. **Choosing the Right [Focus Keyword]** (buying guide/selection criteria)
-9. **[Focus Keyword] Dosage/Usage Guidelines** (if applicable)
-10. **Potential Side Effects and Safety** (with appropriate disclaimers)
-11. **Real User Reviews and Testimonials** 
-12. **Where to Buy [Focus Keyword]** (include affiliate links if provided)
-13. **Frequently Asked Questions**
-14. **Final Thoughts and Recommendations**
-
-QUALITY ASSURANCE REQUIREMENTS:
-- Minimum ${contentData.targetWordCount} words
-- Natural keyword density (1-2% for focus keyword)
-- Include 5-10 related LSI keywords
-- Add internal linking opportunities
-- Include conversion-focused calls to action
-- Ensure readability score of 60+ (Flesch-Kincaid)
-- Add appropriate disclaimers for health/financial claims
-- Include source citations where applicable
-
-COMPLIANCE REQUIREMENTS:
-- Add medical disclaimers: "This information is not intended to diagnose, treat, cure, or prevent any disease. Consult with a healthcare professional before starting any new supplement regimen."
-- Add pricing disclaimers: "Prices are subject to change. Please check the official website for the most current pricing information."
-- Follow FTC guidelines for affiliate link disclosure
-- Ensure YMYL compliance for health/financial topics
-
-CONVERSION OPTIMIZATION:
-- Include compelling headlines and subheadings
-- Add urgency and scarcity elements where appropriate
-- Create clear calls to action throughout
-- Highlight unique selling propositions
-- Address common objections and concerns
-- Include social proof and testimonials
-
-Now create the complete, SEO-optimized article following ALL requirements above. Ensure it meets the minimum word count and includes all mandatory elements.`;
-
-    const messages = [{ role: "user", content: seoPrompt }];
-
-    console.log('🤖 Generating SEO-optimized content...');
-    console.log('📏 Target word count:', contentData.targetWordCount);
+    console.log('Calling Anthropic API...');
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -153,90 +93,44 @@ Now create the complete, SEO-optimized article following ALL requirements above.
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 8000, // Increased for longer content
-        messages: messages,
-        temperature: 0.3 // Lower temperature for more focused, factual content
+        max_tokens: 8000,
+        messages: messages
       })
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('❌ Anthropic API Error:', errorData);
-      return res.status(response.status).json({ 
-        error: `Content generation failed: ${response.status}`,
-        details: errorData.substring(0, 200)
+      const errorText = await response.text();
+      console.error('Anthropic API error:', response.status, errorText);
+      return res.status(500).json({ 
+        error: 'Content generation failed',
+        status: response.status
       });
     }
 
-    const data = await response.json();
-    const generatedContent = data.content[0].text;
-    
-    // QUALITY ASSURANCE CHECKS
-    const wordCount = generatedContent.split(' ').length;
-    const hasRequiredSections = {
-      inThisArticle: generatedContent.includes('In This Article, You\'ll Discover:'),
-      tldrSummary: generatedContent.includes('TLDR') || generatedContent.includes('TL;DR'),
-      focusKeywordInTitle: generatedContent.toLowerCase().includes(contentData.focusKeyword.toLowerCase()),
-      boldHeadings: generatedContent.includes('**'),
-      appropriateLength: wordCount >= (contentData.targetWordCount * 0.8) // Allow 20% variance
-    };
+    const result = await response.json();
+    const content = result.content[0].text;
+    const actualWordCount = content.split(' ').length;
 
-    console.log('📊 Quality Assessment:');
-    console.log('Word count:', wordCount, '/ Target:', contentData.targetWordCount);
-    console.log('QA Checks:', hasRequiredSections);
+    console.log(`Content generated successfully. Word count: ${actualWordCount}`);
 
-    // Calculate quality score
-    const qualityChecks = Object.values(hasRequiredSections);
-    const qualityScore = (qualityChecks.filter(Boolean).length / qualityChecks.length) * 100;
-
-    console.log('📈 Quality Score:', qualityScore.toFixed(1) + '%');
-
-    // Warn if quality thresholds not met
-    const warnings = [];
-    if (wordCount < contentData.targetWordCount * 0.8) {
-      warnings.push(`Word count below target: ${wordCount} / ${contentData.targetWordCount}`);
-    }
-    if (!hasRequiredSections.inThisArticle) {
-      warnings.push('Missing "In This Article, You\'ll Discover" section');
-    }
-    if (!hasRequiredSections.tldrSummary) {
-      warnings.push('Missing TLDR summary section');
-    }
-    if (qualityScore < 80) {
-      warnings.push('Quality score below 80%');
-    }
-
-    const successResponse = {
+    // Return success response
+    return res.status(200).json({
       success: true,
-      content: generatedContent,
-      qualityAssurance: {
-        wordCount: wordCount,
-        targetWordCount: contentData.targetWordCount,
-        qualityScore: qualityScore,
-        seoChecks: hasRequiredSections,
-        warnings: warnings,
-        focusKeyword: contentData.focusKeyword,
-        niche: contentData.niche,
-        platform: contentData.platform
-      },
+      content: content,
       metadata: {
-        model: "claude-sonnet-4-20250514",
-        generatedAt: new Date().toISOString(),
-        usage: data.usage
+        wordCount: actualWordCount,
+        targetWordCount: wordCount,
+        keyword: keyword,
+        niche: niche,
+        generatedAt: new Date().toISOString()
       }
-    };
-
-    console.log('✅ Content generation completed');
-    console.log('⚠️  Warnings:', warnings.length);
-    
-    res.status(200).json(successResponse);
+    });
 
   } catch (error) {
-    console.error('💥 Error in enhanced content generation:', error);
-    res.status(500).json({ 
-      error: 'Content generation failed',
-      message: error.message,
-      timestamp: new Date().toISOString()
+    console.error('Server error:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message
     });
   }
 }
