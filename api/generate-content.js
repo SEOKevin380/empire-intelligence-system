@@ -28,17 +28,32 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Publication is required' });
     }
 
+    // DIAGNOSTIC: Check API key
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    console.log('API Key status:', {
+      exists: !!apiKey,
+      length: apiKey ? apiKey.length : 0,
+      prefix: apiKey ? apiKey.substring(0, 10) + '...' : 'None'
+    });
+
+    if (!apiKey) {
+      return res.status(500).json({ 
+        error: 'ANTHROPIC_API_KEY environment variable not found',
+        suggestion: 'Check your Vercel environment variables'
+      });
+    }
+
     const targetWords = parseInt(wordCount) || 8000;
 
-    // Enhanced prompt with all requirements
+    // Enhanced prompt
     const prompt = `You are a world-class content writer specializing in SEO-optimized, conversion-focused articles. Create a comprehensive ${targetWords}-word article about "${keyword}" using ONLY the provided source material as your factual foundation.
 
 CRITICAL REQUIREMENTS:
 
-1. AFFILIATE LINK INTEGRATION: Include this affiliate link naturally throughout the content at least 3-4 times: "${affiliateLink}" 
-   Use compelling call-to-action phrases like "discover more here", "get started today", "try it now", "learn more", etc.
+1. AFFILIATE LINK INTEGRATION: Include this affiliate link naturally throughout the content: "${affiliateLink}" 
+   Use compelling call-to-action phrases like "discover more here", "get started today", "try it now".
 
-2. "IN THIS ARTICLE" SECTION - EXACT FORMAT REQUIRED:
+2. "IN THIS ARTICLE" SECTION - EXACT FORMAT:
    Create a section titled "In This Article, You'll Discover:" with 6-7 sentence-style points.
    DO NOT use bullet symbols (•, –, *, etc.) or emojis.
    Each line should be a complete sentence starting with a capital letter.
@@ -48,64 +63,55 @@ CRITICAL REQUIREMENTS:
    - Goal 1: Educate about ${keyword} and their benefits
    - Goal 2: Build trust through science, ingredients, and testimonials  
    - Goal 3: Address concerns through comparisons, safety, and FAQs
-   - Goal 4: Drive action with clear purchasing guidance and affiliate links
+   - Goal 4: Drive action with clear purchasing guidance
 
 4. SEO OPTIMIZATION:
-   - Use "${keyword}" as primary keyword throughout (natural density 1-2%)
-   - Include variations like "best ${keyword}", "${keyword} benefits", "${keyword} reviews"
-   - Create compelling, keyword-rich headers
+   - Use "${keyword}" as primary keyword throughout
+   - Include variations like "best ${keyword}", "${keyword} benefits"
+   - Natural keyword density 1-2%
 
 5. CONVERSION ELEMENTS:
-   - Multiple compelling calls-to-action with the affiliate link
-   - Social proof and testimonials from the source material
-   - Clear value propositions and benefits
-   - Urgency and scarcity where appropriate
+   - Multiple calls-to-action with affiliate link
+   - Social proof and testimonials
+   - Clear value propositions
 
 6. PROFESSIONAL STRUCTURE:
    - SEO-optimized title
-   - "In This Article, You'll Discover:" section (exact clean format above)
-   - TLDR section with key benefits
-   - 8-12 substantial sections with descriptive headers
-   - Comprehensive FAQ section
-   - Strong conclusion with affiliate link CTA
+   - TLDR section
+   - 8-12 substantial sections
+   - FAQ section
+   - Strong conclusion with CTA
 
-7. FACTUAL ACCURACY: Base ALL claims strictly on the provided source material. Do not invent facts.
+7. FACTUAL ACCURACY: Base ALL claims on provided source material only.
 
 8. COMPLIANCE: Include health disclaimers and FTC affiliate disclosure.
 
-SOURCE MATERIAL:
-${sourceMaterial}
+SOURCE MATERIAL: ${sourceMaterial}
 
-TARGET: ${targetWords} words
-AFFILIATE LINK: ${affiliateLink}
-PUBLICATION: ${publication}
+Create compelling, conversion-focused content that guides readers to the affiliate link while providing genuine value.`;
 
-Create compelling, conversion-focused content that naturally guides readers to the affiliate link while providing genuine value.`;
+    console.log('Starting API diagnostics...');
 
-    console.log('Making request to Claude API...');
-    console.log('API Key exists:', !!process.env.ANTHROPIC_API_KEY);
-    
-    // Try the most commonly working model names in order
-    const modelNames = [
+    // DIAGNOSTIC: Try a simple API test first
+    const testModels = [
       'claude-3-5-sonnet-20241022',
-      'claude-3-sonnet-20240229', 
-      'claude-3-opus-20240229',
+      'claude-3-sonnet-20240229',
       'claude-3-haiku-20240307'
     ];
 
-    let response;
-    let lastError;
+    let successfulResponse;
+    let diagnosticInfo = [];
 
-    // Try each model until one works
-    for (const model of modelNames) {
+    for (const model of testModels) {
       try {
-        console.log(`Trying model: ${model}`);
+        console.log(`Testing model: ${model}`);
         
-        response = await fetch('https://api.anthropic.com/v1/messages', {
+        const startTime = Date.now();
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'x-api-key': apiKey,
             'anthropic-version': '2023-06-01',
           },
           body: JSON.stringify({
@@ -120,76 +126,98 @@ Create compelling, conversion-focused content that naturally guides readers to t
           })
         });
 
+        const responseTime = Date.now() - startTime;
+        console.log(`Model ${model} response: ${response.status} (${responseTime}ms)`);
+
+        diagnosticInfo.push({
+          model,
+          status: response.status,
+          statusText: response.statusText,
+          responseTime: responseTime,
+          success: response.ok
+        });
+
         if (response.ok) {
-          console.log(`Success with model: ${model}`);
-          break;
+          const data = await response.json();
+          const content = data.content?.[0]?.text;
+          
+          if (content) {
+            successfulResponse = {
+              content,
+              model,
+              wordCount: content.split(/\s+/).length
+            };
+            console.log(`SUCCESS with ${model}: ${successfulResponse.wordCount} words`);
+            break;
+          }
         } else {
+          // Log error details
           const errorText = await response.text();
-          console.log(`Model ${model} failed:`, response.status, errorText);
-          lastError = { status: response.status, text: errorText };
+          console.log(`Model ${model} error:`, errorText);
+          diagnosticInfo[diagnosticInfo.length - 1].errorDetails = errorText;
         }
+
       } catch (error) {
-        console.log(`Model ${model} error:`, error.message);
-        lastError = { error: error.message };
+        console.log(`Model ${model} exception:`, error.message);
+        diagnosticInfo.push({
+          model,
+          error: error.message,
+          success: false
+        });
       }
     }
 
-    if (!response || !response.ok) {
-      console.error('All models failed. Last error:', lastError);
-      return res.status(500).json({ 
-        error: 'All Claude models failed to respond',
-        details: lastError,
-        suggestion: 'Please check your API key and try again later'
+    if (successfulResponse) {
+      return res.status(200).json({
+        success: true,
+        content: successfulResponse.content,
+        metadata: {
+          wordCount: successfulResponse.wordCount,
+          keyword,
+          publication,
+          affiliateLink: affiliateLink || 'None provided',
+          modelUsed: successfulResponse.model,
+          generatedAt: new Date().toISOString(),
+          diagnostics: diagnosticInfo
+        }
       });
     }
 
-    const responseText = await response.text();
-    console.log('Raw API Response length:', responseText.length);
+    // If we get here, all models failed
+    console.log('All models failed. Diagnostic summary:', diagnosticInfo);
 
-    let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch (e) {
-      console.error('Failed to parse API response:', e);
-      return res.status(500).json({ 
-        error: 'Invalid API response format',
-        rawResponse: responseText.substring(0, 500)
-      });
-    }
-
-    const generatedContent = data.content?.[0]?.text;
-
-    if (!generatedContent) {
-      console.error('No content in Claude response:', data);
-      return res.status(500).json({ 
-        error: 'No content generated from API',
-        apiResponse: data
-      });
-    }
-
-    // Estimate word count
-    const estimatedWordCount = generatedContent.split(/\s+/).length;
-
-    console.log(`Content generated successfully: ${estimatedWordCount} words`);
+    // Check for common issues
+    const commonIssues = [];
+    const firstError = diagnosticInfo.find(d => d.errorDetails);
     
-    return res.status(200).json({
-      success: true,
-      content: generatedContent,
-      metadata: {
-        wordCount: estimatedWordCount,
-        keyword,
-        publication,
-        affiliateLink: affiliateLink || 'None provided',
-        generatedAt: new Date().toISOString()
+    if (firstError) {
+      if (firstError.status === 401) {
+        commonIssues.push('API key authentication failed - check if your API key is valid and has billing set up');
+      } else if (firstError.status === 429) {
+        commonIssues.push('Rate limit exceeded - your API key may have hit usage limits');
+      } else if (firstError.status === 400) {
+        commonIssues.push('Bad request - there may be an issue with the request format');
       }
+    }
+
+    return res.status(500).json({
+      error: 'All Claude models failed to respond',
+      diagnostics: diagnosticInfo,
+      possibleIssues: commonIssues,
+      suggestions: [
+        'Check your Anthropic API key is valid and active',
+        'Verify billing is set up on your Anthropic account',
+        'Ensure your API key has sufficient credits',
+        'Try again in a few minutes in case of temporary service issues'
+      ]
     });
 
   } catch (error) {
-    console.error('Error in generate-content API:', error);
+    console.error('Critical error in API handler:', error);
     return res.status(500).json({ 
-      error: 'Internal server error',
+      error: 'Critical system error',
       message: error.message,
-      stack: error.stack
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
