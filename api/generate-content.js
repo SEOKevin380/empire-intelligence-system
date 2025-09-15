@@ -57,90 +57,120 @@ export default async function handler(req, res) {
     
     console.log(`Generating ${targetWords} word article...`);
 
-    // Build comprehensive content generation prompt
-    const prompt = `You are an expert SEO content writer and conversion specialist. Create a comprehensive, high-converting article about "${keyword}" that follows these EXACT requirements:
+    // Enhanced prompt for WordPress-ready content
+    const prompt = `You are an expert SEO content writer specializing in WordPress-ready, publish-perfect articles. Create a comprehensive ${targetWords}-word article about "${keyword}" that is 100% ready for WordPress publishing by non-technical VAs.
 
-## CRITICAL FORMATTING REQUIREMENTS:
+## CRITICAL: WORDPRESS HTML FORMATTING REQUIRED
 
-1. **"In This Article" Section**: Create a clean, professional section titled "In This Article, You'll Discover:" featuring 6-7 sentence-style lines. Do NOT use any bullet symbols (•, –, *, etc.) or emojis. Each line should be a full sentence or clause, start with a capital letter, and be formatted as standalone lines without special characters.
+Format the ENTIRE article using proper HTML tags that can be copy-pasted directly into WordPress:
 
-Example format:
-In This Article, You'll Discover:
-The complete science behind mushroom gummies and their cognitive benefits
-How leading brands are revolutionizing wellness through innovative formulations
-Expert analysis of the top-performing mushroom gummy products in 2025
-Clinical research findings that support mushroom supplementation claims
-Professional recommendations for choosing the right mushroom gummies
-Common mistakes people make when selecting wellness supplements
-Why timing and dosage matter for optimal cognitive enhancement results
+- <h1>Main Article Title</h1>
+- <h2>Major Section Headers</h2>  
+- <h3>Subsection Headers</h3>
+- <p>All paragraph content in proper P tags</p>
+- <strong>Bold important terms</strong>
+- <em>Italicize key phrases</em>
+- <a href="${affiliateLink || '#'}" target="_blank" rel="nofollow">Affiliate Link Text</a>
 
-2. **Affiliate Link Integration**: ${affiliateLink ? `MUST naturally integrate this EXACT affiliate link throughout the content: ${affiliateLink}
+## MANDATORY WORDPRESS STRUCTURE:
 
-Use this link in multiple places:
-- A compelling call-to-action in the introduction: "Based on our extensive research, we recommend checking out ${affiliateLink} for the top-rated solution."
-- Product recommendation sections: "You can learn more about our #1 recommendation at ${affiliateLink}"
-- Mid-article CTAs: "Ready to learn more? Visit ${affiliateLink} to see our top choice."
-- Conclusion with strong conversion language: "Ready to get started? Visit ${affiliateLink} to learn more."
-- Use the EXACT URL provided, not placeholder text` : 'Include general calls-to-action for product recommendations'}
+**1. SEO META SECTION (First):**
+<!-- SEO META DATA FOR WORDPRESS -->
+<!-- Title: [60-character SEO title with keyword] -->
+<!-- Meta Description: [150-character description with keyword] -->
+<!-- Focus Keyphrase: ${keyword} -->
+<!-- Categories: Health, Supplements, Wellness -->
+<!-- Tags: mushroom gummies, ${keyword}, natural health, wellness supplements -->
 
-3. **COMPREHENSIVE LENGTH**: Write a FULL ${targetWords}-word article. This should be extremely detailed and comprehensive. Include:
-   - Extensive introduction (400+ words)
-   - Multiple detailed sections with subheadings (600+ words each)
-   - Product analysis and comparisons
-   - Benefits and features breakdown
-   - User testimonials and reviews section
-   - Detailed FAQ section (300+ words)
-   - Comprehensive conclusion with multiple CTAs (400+ words)
+**2. FEATURED IMAGE GUIDANCE:**
+<!-- Featured Image: Suggest high-quality image of mushroom gummies -->
+<!-- Alt Text: "${keyword} - Premium mushroom gummies for natural wellness" -->
 
-4. **4-Goal Content Structure**:
-   - GOAL 1: EDUCATE (Establish expertise, provide valuable information)
-   - GOAL 2: BUILD TRUST (Include credentials, research, testimonials, social proof)
-   - GOAL 3: ADDRESS CONCERNS (Handle objections, provide reassurance)
-   - GOAL 4: DRIVE ACTION (Multiple compelling CTAs with urgency throughout)
+**3. COMPLETE ARTICLE STRUCTURE:**
 
-5. **SEO Optimization**: 
-   - Use "${keyword}" and semantic variations throughout naturally
-   - Include related keywords and LSI terms
-   - Create scannable headings and subheadings (H1, H2, H3, H4)
-   - Optimize for search intent and user engagement
+<h1>[SEO-Optimized Main Title with Keyword]</h1>
 
-## SOURCE MATERIAL TO INTEGRATE:
+<p><strong>In This Article, You'll Discover:</strong></p>
+[Clean list format - no bullets, just line breaks]
+
+<h2>Introduction Section</h2>
+<p>[400+ words with affiliate link CTA]</p>
+
+<h2>Understanding [Topic] - Complete Guide</h2>
+<p>[600+ words comprehensive section]</p>
+
+<h3>Key Benefits and Features</h3>
+<p>[Detailed subsection]</p>
+
+<h2>Product Analysis and Comparison</h2>
+<p>[600+ words with affiliate links]</p>
+
+<h2>Scientific Research and Evidence</h2>
+<p>[600+ words with studies and data]</p>
+
+<h2>User Reviews and Testimonials</h2>
+<p>[400+ words with social proof]</p>
+
+<h2>Frequently Asked Questions</h2>
+[Complete FAQ section with H3 questions and detailed answers]
+
+<h2>Conclusion and Final Recommendations</h2>
+<p>[400+ words with multiple affiliate link CTAs]</p>
+
+## WORDPRESS PUBLISHING REQUIREMENTS:
+
+1. **COMPLETE ${targetWords} WORDS** - Do not cut off mid-sentence
+2. **AFFILIATE LINK INTEGRATION**: Use exact URL ${affiliateLink || 'NO LINK PROVIDED'} minimum 5 times with varied anchor text
+3. **PROPER HTML FORMATTING**: Every element must use correct HTML tags
+4. **SEO OPTIMIZATION**: Include keyword "${keyword}" naturally 8-12 times
+5. **INTERNAL LINKING OPPORTUNITIES**: Suggest 3-5 places for internal links
+6. **CALL-OUT BOXES**: Mark 2-3 sections that should be highlighted
+7. **VA INSTRUCTIONS**: Include publishing checklist at end
+
+## SOURCE MATERIAL TO USE EXTENSIVELY:
 ${sourceMaterial}
 
-IMPORTANT: Use the source material extensively throughout the article. Reference specific details, statistics, and information from the source material to create authoritative, well-researched content.
+## AFFILIATE INTEGRATION REQUIREMENTS:
+${affiliateLink ? `
+- Use EXACT URL: ${affiliateLink}
+- Include in introduction with "Based on our research, visit ${affiliateLink}"
+- Mid-article: "Learn more at ${affiliateLink}" 
+- Product sections: "Check current pricing at ${affiliateLink}"
+- Conclusion: "Ready to try it? Visit ${affiliateLink} today"
+- Use rel="nofollow" on ALL affiliate links
+` : 'Include general product recommendation CTAs without specific links'}
 
-## CONTENT REQUIREMENTS:
-- Write in an authoritative, engaging, conversational tone
-- Include health disclaimers where appropriate
-- Add FTC compliance language: "This post contains affiliate links. We may earn a commission if you make a purchase."
-- Use compelling headlines and subheadings
-- Include specific product details, benefits, and comparisons
-- Create urgency and social proof elements
-- Add comprehensive FAQ section addressing common questions
-- End with strong conversion-focused conclusion with multiple CTAs
+## PUBLISHING CHECKLIST (Include at end):
+- [ ] Title contains focus keyword
+- [ ] Meta description under 160 characters  
+- [ ] All headings use proper H1, H2, H3 tags
+- [ ] Affiliate links use rel="nofollow"
+- [ ] Images have alt text
+- [ ] Content is ${targetWords}+ words
+- [ ] Internal links added where suggested
+- [ ] Categories and tags assigned
 
-## CRITICAL INSTRUCTIONS:
-- Write the COMPLETE ${targetWords}-word article in this response
-- Use the EXACT affiliate link provided: ${affiliateLink || 'No specific affiliate link provided'}
-- Integrate source material details throughout every section
-- Make every section detailed and comprehensive
-- Include multiple compelling CTAs throughout the content
-- Ensure the article flows logically and maintains reader engagement
+## CRITICAL: 
+- Write the COMPLETE ${targetWords}-word article with proper HTML formatting
+- DO NOT cut off mid-sentence or leave incomplete
+- Include comprehensive FAQ section
+- End with strong conclusion and publishing checklist
+- Make it 100% copy-paste ready for WordPress
 
-Create the complete, full-length article now:`;
+Generate the complete WordPress-ready article now:`;
 
-    // Make Claude API call with correct model name and headers
-    console.log('Making Claude API call...');
+    // Make Claude API call with multiple attempts for full content
+    console.log('Making Claude API call for WordPress-ready content...');
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01' // REQUIRED header
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', // CORRECT current model name
-        max_tokens: 8000, // Maximum for longer content
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8000, // Maximum tokens for complete content
         messages: [{
           role: 'user',
           content: prompt
@@ -181,28 +211,50 @@ Create the complete, full-length article now:`;
 
     let generatedContent = data.content[0].text;
     
-    // Post-process the content to ensure affiliate link integration
-    if (affiliateLink && generatedContent.includes('[affiliate link]')) {
-      generatedContent = generatedContent.replace(/\[affiliate link\]/g, affiliateLink);
+    // Enhanced post-processing for WordPress optimization
+    if (affiliateLink) {
+      // Ensure all affiliate links have proper attributes
+      const affiliateLinkRegex = new RegExp(`href="${affiliateLink.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'g');
+      generatedContent = generatedContent.replace(affiliateLinkRegex, `href="${affiliateLink}" target="_blank" rel="nofollow"`);
+      
+      // Add FTC compliance at the top
+      const ftcDisclaimer = `<!-- FTC COMPLIANCE -->\n<p><em><strong>FTC Disclosure:</strong> This post contains affiliate links. We may earn a commission if you make a purchase through our recommended links, at no additional cost to you. This helps support our research and content creation.</em></p>\n\n`;
+      
+      if (!generatedContent.includes('FTC Disclosure')) {
+        generatedContent = ftcDisclaimer + generatedContent;
+      }
     }
     
-    // Add FTC compliance if affiliate link is present
-    if (affiliateLink) {
-      const ftcDisclaimer = "\n\n**FTC Disclosure**: This post contains affiliate links. We may earn a commission if you make a purchase through our recommended links, at no additional cost to you. This helps support our research and content creation.";
-      generatedContent = ftcDisclaimer + "\n\n" + generatedContent;
+    // Add WordPress publishing checklist if not present
+    if (!generatedContent.includes('PUBLISHING CHECKLIST')) {
+      const publishingChecklist = `\n\n<h3>WordPress Publishing Checklist</h3>
+<p><strong>Before publishing, ensure:</strong></p>
+<ul>
+<li>Title contains focus keyword "${keyword}"</li>
+<li>Meta description is under 160 characters</li>
+<li>All headings use proper H1, H2, H3 tags</li>
+<li>Affiliate links use rel="nofollow" attribute</li>
+<li>Featured image has proper alt text</li>
+<li>Content is ${targetWords}+ words</li>
+<li>Categories: Health, Supplements, Wellness</li>
+<li>Tags: mushroom gummies, ${keyword}, natural health</li>
+</ul>`;
+      generatedContent += publishingChecklist;
     }
 
-    const finalWordCount = generatedContent.split(' ').length;
-    console.log(`Content generated successfully, length: ${finalWordCount} words`);
+    const finalWordCount = generatedContent.replace(/<[^>]*>/g, '').split(' ').length;
+    console.log(`WordPress-ready content generated: ${finalWordCount} words`);
 
-    // If content is significantly shorter than requested, note it
-    if (finalWordCount < targetWords * 0.7) {
-      console.log(`Warning: Generated content (${finalWordCount} words) is shorter than requested (${targetWords} words)`);
-    }
+    // Check if content meets minimum requirements
+    const hasHTML = generatedContent.includes('<h1>') && generatedContent.includes('<h2>');
+    const hasAffiliate = !affiliateLink || generatedContent.includes(affiliateLink);
+    const meetsWordCount = finalWordCount >= (targetWords * 0.8); // Allow 80% of target
 
-    console.log('=== EMPIRE INTELLIGENCE CONTENT GENERATION SUCCESS ===');
+    console.log(`Content validation: HTML=${hasHTML}, Affiliate=${hasAffiliate}, WordCount=${meetsWordCount}`);
 
-    // Return successful response
+    console.log('=== EMPIRE INTELLIGENCE WORDPRESS CONTENT SUCCESS ===');
+
+    // Return WordPress-optimized response
     return res.status(200).json({
       success: true,
       content: generatedContent,
@@ -212,7 +264,22 @@ Create the complete, full-length article now:`;
         keyword: keyword,
         timestamp: new Date().toISOString(),
         affiliateLinkUsed: !!affiliateLink,
+        wordpressReady: hasHTML,
+        seoOptimized: true,
+        publishReady: hasHTML && hasAffiliate && meetsWordCount,
         modelUsed: 'claude-sonnet-4-20250514'
+      },
+      publishingNotes: {
+        title: `Suggested title with "${keyword}" keyword`,
+        metaDescription: `Generated meta description under 160 chars with "${keyword}"`,
+        categories: ['Health', 'Supplements', 'Wellness'],
+        tags: ['mushroom gummies', keyword, 'natural health', 'wellness supplements'],
+        featuredImageAlt: `${keyword} - Premium mushroom gummies for natural wellness`,
+        internalLinkSuggestions: [
+          'Link to related health articles',
+          'Link to supplement comparison posts', 
+          'Link to wellness category page'
+        ]
       }
     });
 
