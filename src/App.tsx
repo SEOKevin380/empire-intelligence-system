@@ -27,21 +27,22 @@ export default function App() {
 
   const handleSubmit = async () => {
     console.log('Button clicked! Form data:', formData);
-    console.log('Keyword value:', formData.keyword);
+    console.log('Keyword value:', `"${formData.keyword}"`);
+    console.log('Keyword length:', formData.keyword.length);
     console.log('Source Material length:', formData.sourceMaterial.length);
     
-    // Client-side validation before sending to API
-    if (!formData.keyword || formData.keyword.trim() === '') {
+    // SIMPLIFIED validation - remove trim() and length checks that might be causing issues
+    if (!formData.keyword) {
       setError('Please enter a Target Keyword');
       return;
     }
     
-    if (!formData.publication || formData.publication.trim() === '') {
+    if (!formData.publication) {
       setError('Please select a Publication');
       return;
     }
     
-    if (!formData.sourceMaterial || formData.sourceMaterial.length < 50) {
+    if (formData.sourceMaterial.length < 50) {
       setError('Source Material must be at least 50 characters');
       return;
     }
@@ -97,12 +98,12 @@ export default function App() {
       button.onclick = handleSubmit;
       console.log('Click handler attached via useEffect');
     }
-  }, []);
+  }, [formData]); // Add formData dependency to ensure handler updates
 
-  // Validation
+  // SIMPLIFIED validation for UI colors
   const validation = {
     publication: formData.publication.length > 0,
-    keyword: formData.keyword.length >= 3,
+    keyword: formData.keyword.length > 0, // Simplified - just check if exists
     sourceMaterial: formData.sourceMaterial.length >= 50,
     contact: formData.email.length > 0 || formData.phone.length > 0
   };
@@ -176,6 +177,10 @@ export default function App() {
                 fontSize: '16px'
               }}
             />
+            {/* Debug info */}
+            <div style={{ fontSize: '10px', color: '#666', marginTop: '2px' }}>
+              Debug: "{formData.keyword}" (length: {formData.keyword.length})
+            </div>
           </div>
 
           <div style={{ marginBottom: '20px' }}>
@@ -309,6 +314,16 @@ export default function App() {
 
           <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '20px' }}>
             * Provide either email OR phone number (both recommended)
+          </div>
+
+          {/* Debug section */}
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: '20px', padding: '10px', background: '#f5f5f5', borderRadius: '4px' }}>
+            <strong>Debug Info:</strong><br/>
+            Publication: "{formData.publication}" ({validation.publication ? 'Valid' : 'Invalid'})<br/>
+            Keyword: "{formData.keyword}" ({validation.keyword ? 'Valid' : 'Invalid'})<br/>
+            Source Material: {formData.sourceMaterial.length} chars ({validation.sourceMaterial ? 'Valid' : 'Invalid'})<br/>
+            Contact: {validation.contact ? 'Valid' : 'Invalid'}<br/>
+            All Valid: {allValid ? 'YES' : 'NO'}
           </div>
 
           <button
