@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
     const targetWords = parseInt(wordCount) || 8000;
 
-    // Enhanced prompt with all your specific requirements
+    // Enhanced prompt with all requirements
     const prompt = `You are a world-class content writer specializing in SEO-optimized, conversion-focused articles. Create a comprehensive ${targetWords}-word article about "${keyword}" using ONLY the provided source material as your factual foundation.
 
 CRITICAL REQUIREMENTS:
@@ -43,14 +43,6 @@ CRITICAL REQUIREMENTS:
    DO NOT use bullet symbols (•, –, *, etc.) or emojis.
    Each line should be a complete sentence starting with a capital letter.
    Format as standalone lines with NO special characters in front.
-   Example:
-   "In This Article, You'll Discover:
-   What mushroom gummies are and why they're becoming essential for modern wellness
-   The complete ingredient breakdown of the top-rated mushroom gummies available today
-   How these supplements support weight loss, focus, and stress management simultaneously
-   The science behind why these specific mushroom combinations work so effectively
-   Real user experiences and testimonials from people who've transformed their health
-   Professional comparisons showing why these stand out from other mushroom supplements"
 
 3. FOUR-GOAL STRUCTURE: 
    - Goal 1: Educate about ${keyword} and their benefits
@@ -77,85 +69,102 @@ CRITICAL REQUIREMENTS:
    - Comprehensive FAQ section
    - Strong conclusion with affiliate link CTA
 
-7. FACTUAL ACCURACY: Base ALL claims strictly on the provided source material. Do not invent facts, statistics, or claims not supported by the source.
+7. FACTUAL ACCURACY: Base ALL claims strictly on the provided source material. Do not invent facts.
 
-8. COMPLIANCE: Include appropriate health disclaimers and FTC affiliate disclosure.
+8. COMPLIANCE: Include health disclaimers and FTC affiliate disclosure.
 
-SOURCE MATERIAL (USE EXCLUSIVELY):
+SOURCE MATERIAL:
 ${sourceMaterial}
 
-AFFILIATE LINK TO INTEGRATE: ${affiliateLink}
+TARGET: ${targetWords} words
+AFFILIATE LINK: ${affiliateLink}
 PUBLICATION: ${publication}
-TARGET WORD COUNT: ${targetWords} words
 
-Create compelling, conversion-focused content that naturally guides readers to the affiliate link while providing genuine value and maintaining SEO optimization throughout.`;
+Create compelling, conversion-focused content that naturally guides readers to the affiliate link while providing genuine value.`;
 
-    console.log('Making request to Claude API with corrected model...');
+    console.log('Making request to Claude API...');
+    console.log('API Key exists:', !!process.env.ANTHROPIC_API_KEY);
+    
+    // Try the most commonly working model names in order
+    const modelNames = [
+      'claude-3-5-sonnet-20241022',
+      'claude-3-sonnet-20240229', 
+      'claude-3-opus-20240229',
+      'claude-3-haiku-20240307'
+    ];
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022', // Corrected model name
-        max_tokens: 8000,
-        messages: [
-          {
-            role: 'user',
-            content: prompt
-          }
-        ]
-      })
-    });
+    let response;
+    let lastError;
 
-    const responseText = await response.text();
-    console.log('Raw API Response:', responseText);
-
-    if (!response.ok) {
-      let errorData;
+    // Try each model until one works
+    for (const model of modelNames) {
       try {
-        errorData = JSON.parse(responseText);
-      } catch (e) {
-        errorData = { error: responseText };
-      }
-      
-      console.error('Claude API Error:', response.status, response.statusText, errorData);
-      
-      if (response.status === 400) {
-        return res.status(500).json({ 
-          error: 'API request format error. Please check model name and parameters.',
-          details: errorData.error || 'Bad Request'
+        console.log(`Trying model: ${model}`);
+        
+        response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: model,
+            max_tokens: 8000,
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ]
+          })
         });
+
+        if (response.ok) {
+          console.log(`Success with model: ${model}`);
+          break;
+        } else {
+          const errorText = await response.text();
+          console.log(`Model ${model} failed:`, response.status, errorText);
+          lastError = { status: response.status, text: errorText };
+        }
+      } catch (error) {
+        console.log(`Model ${model} error:`, error.message);
+        lastError = { error: error.message };
       }
-      
-      if (response.status === 401) {
-        return res.status(500).json({ 
-          error: 'API authentication failed. Please check API key configuration.',
-          details: 'Unauthorized access to Claude API'
-        });
-      }
-      
+    }
+
+    if (!response || !response.ok) {
+      console.error('All models failed. Last error:', lastError);
       return res.status(500).json({ 
-        error: `Content generation failed: ${response.status}`,
-        details: errorData.error || response.statusText
+        error: 'All Claude models failed to respond',
+        details: lastError,
+        suggestion: 'Please check your API key and try again later'
       });
     }
+
+    const responseText = await response.text();
+    console.log('Raw API Response length:', responseText.length);
 
     let data;
     try {
       data = JSON.parse(responseText);
     } catch (e) {
       console.error('Failed to parse API response:', e);
-      return res.status(500).json({ error: 'Invalid API response format' });
+      return res.status(500).json({ 
+        error: 'Invalid API response format',
+        rawResponse: responseText.substring(0, 500)
+      });
     }
 
     const generatedContent = data.content?.[0]?.text;
 
     if (!generatedContent) {
       console.error('No content in Claude response:', data);
-      return res.status(500).json({ error: 'No content generated from API' });
+      return res.status(500).json({ 
+        error: 'No content generated from API',
+        apiResponse: data
+      });
     }
 
     // Estimate word count
@@ -179,7 +188,8 @@ Create compelling, conversion-focused content that naturally guides readers to t
     console.error('Error in generate-content API:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message 
+      message: error.message,
+      stack: error.stack
     });
   }
 }
