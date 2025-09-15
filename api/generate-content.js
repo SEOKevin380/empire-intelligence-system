@@ -28,32 +28,24 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Publication is required' });
     }
 
-    // DIAGNOSTIC: Check API key
+    // Check for API key
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    console.log('API Key status:', {
-      exists: !!apiKey,
-      length: apiKey ? apiKey.length : 0,
-      prefix: apiKey ? apiKey.substring(0, 10) + '...' : 'None'
-    });
-
     if (!apiKey) {
-      return res.status(500).json({ 
-        error: 'ANTHROPIC_API_KEY environment variable not found',
-        suggestion: 'Check your Vercel environment variables'
-      });
+      console.error('Missing ANTHROPIC_API_KEY environment variable');
+      return res.status(500).json({ error: 'API configuration error' });
     }
 
     const targetWords = parseInt(wordCount) || 8000;
 
-    // Enhanced prompt
+    // Enhanced prompt with your requirements
     const prompt = `You are a world-class content writer specializing in SEO-optimized, conversion-focused articles. Create a comprehensive ${targetWords}-word article about "${keyword}" using ONLY the provided source material as your factual foundation.
 
 CRITICAL REQUIREMENTS:
 
-1. AFFILIATE LINK INTEGRATION: Include this affiliate link naturally throughout the content: "${affiliateLink}" 
-   Use compelling call-to-action phrases like "discover more here", "get started today", "try it now".
+1. AFFILIATE LINK INTEGRATION: Include this affiliate link naturally throughout the content at least 3-4 times: "${affiliateLink}" 
+   Use compelling call-to-action phrases like "discover more here", "get started today", "try it now", "learn more".
 
-2. "IN THIS ARTICLE" SECTION - EXACT FORMAT:
+2. "IN THIS ARTICLE" SECTION - EXACT FORMAT REQUIRED:
    Create a section titled "In This Article, You'll Discover:" with 6-7 sentence-style points.
    DO NOT use bullet symbols (•, –, *, etc.) or emojis.
    Each line should be a complete sentence starting with a capital letter.
@@ -63,161 +55,100 @@ CRITICAL REQUIREMENTS:
    - Goal 1: Educate about ${keyword} and their benefits
    - Goal 2: Build trust through science, ingredients, and testimonials  
    - Goal 3: Address concerns through comparisons, safety, and FAQs
-   - Goal 4: Drive action with clear purchasing guidance
+   - Goal 4: Drive action with clear purchasing guidance and affiliate links
 
 4. SEO OPTIMIZATION:
-   - Use "${keyword}" as primary keyword throughout
-   - Include variations like "best ${keyword}", "${keyword} benefits"
-   - Natural keyword density 1-2%
+   - Use "${keyword}" as primary keyword throughout (natural density 1-2%)
+   - Include variations like "best ${keyword}", "${keyword} benefits", "${keyword} reviews"
+   - Create compelling, keyword-rich headers
 
 5. CONVERSION ELEMENTS:
-   - Multiple calls-to-action with affiliate link
-   - Social proof and testimonials
-   - Clear value propositions
+   - Multiple compelling calls-to-action with the affiliate link
+   - Social proof and testimonials from the source material
+   - Clear value propositions and benefits
+   - Urgency and scarcity where appropriate
 
 6. PROFESSIONAL STRUCTURE:
    - SEO-optimized title
-   - TLDR section
-   - 8-12 substantial sections
-   - FAQ section
-   - Strong conclusion with CTA
+   - "In This Article, You'll Discover:" section (exact clean format above)
+   - TLDR section with key benefits
+   - 8-12 substantial sections with descriptive headers
+   - Comprehensive FAQ section
+   - Strong conclusion with affiliate link CTA
 
-7. FACTUAL ACCURACY: Base ALL claims on provided source material only.
+7. FACTUAL ACCURACY: Base ALL claims strictly on the provided source material. Do not invent facts.
 
 8. COMPLIANCE: Include health disclaimers and FTC affiliate disclosure.
 
-SOURCE MATERIAL: ${sourceMaterial}
+SOURCE MATERIAL:
+${sourceMaterial}
 
-Create compelling, conversion-focused content that guides readers to the affiliate link while providing genuine value.`;
+AFFILIATE LINK: ${affiliateLink}
+PUBLICATION: ${publication}
+TARGET: ${targetWords} words
 
-    console.log('Starting API diagnostics...');
+Create compelling, conversion-focused content that naturally guides readers to the affiliate link while providing genuine value and maintaining SEO optimization.`;
 
-    // DIAGNOSTIC: Try a simple API test first
-    const testModels = [
-      'claude-3-5-sonnet-20241022',
-      'claude-3-sonnet-20240229',
-      'claude-3-haiku-20240307'
-    ];
+    console.log('Making request to Claude API...');
 
-    let successfulResponse;
-    let diagnosticInfo = [];
-
-    for (const model of testModels) {
-      try {
-        console.log(`Testing model: ${model}`);
-        
-        const startTime = Date.now();
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-          },
-          body: JSON.stringify({
-            model: model,
-            max_tokens: 8000,
-            messages: [
-              {
-                role: 'user',
-                content: prompt
-              }
-            ]
-          })
-        });
-
-        const responseTime = Date.now() - startTime;
-        console.log(`Model ${model} response: ${response.status} (${responseTime}ms)`);
-
-        diagnosticInfo.push({
-          model,
-          status: response.status,
-          statusText: response.statusText,
-          responseTime: responseTime,
-          success: response.ok
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const content = data.content?.[0]?.text;
-          
-          if (content) {
-            successfulResponse = {
-              content,
-              model,
-              wordCount: content.split(/\s+/).length
-            };
-            console.log(`SUCCESS with ${model}: ${successfulResponse.wordCount} words`);
-            break;
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',  // THIS WAS THE MISSING HEADER!
+      },
+      body: JSON.stringify({
+        model: 'claude-3-haiku-20240307',
+        max_tokens: 8000,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
           }
-        } else {
-          // Log error details
-          const errorText = await response.text();
-          console.log(`Model ${model} error:`, errorText);
-          diagnosticInfo[diagnosticInfo.length - 1].errorDetails = errorText;
-        }
+        ]
+      })
+    });
 
-      } catch (error) {
-        console.log(`Model ${model} exception:`, error.message);
-        diagnosticInfo.push({
-          model,
-          error: error.message,
-          success: false
-        });
-      }
-    }
-
-    if (successfulResponse) {
-      return res.status(200).json({
-        success: true,
-        content: successfulResponse.content,
-        metadata: {
-          wordCount: successfulResponse.wordCount,
-          keyword,
-          publication,
-          affiliateLink: affiliateLink || 'None provided',
-          modelUsed: successfulResponse.model,
-          generatedAt: new Date().toISOString(),
-          diagnostics: diagnosticInfo
-        }
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Claude API Error:', response.status, response.statusText, errorData);
+      return res.status(500).json({ 
+        error: `Content generation failed: ${response.status}`,
+        details: errorData.error || response.statusText
       });
     }
 
-    // If we get here, all models failed
-    console.log('All models failed. Diagnostic summary:', diagnosticInfo);
+    const data = await response.json();
+    const generatedContent = data.content?.[0]?.text;
 
-    // Check for common issues
-    const commonIssues = [];
-    const firstError = diagnosticInfo.find(d => d.errorDetails);
-    
-    if (firstError) {
-      if (firstError.status === 401) {
-        commonIssues.push('API key authentication failed - check if your API key is valid and has billing set up');
-      } else if (firstError.status === 429) {
-        commonIssues.push('Rate limit exceeded - your API key may have hit usage limits');
-      } else if (firstError.status === 400) {
-        commonIssues.push('Bad request - there may be an issue with the request format');
-      }
+    if (!generatedContent) {
+      console.error('No content in Claude response:', data);
+      return res.status(500).json({ error: 'No content generated from API' });
     }
 
-    return res.status(500).json({
-      error: 'All Claude models failed to respond',
-      diagnostics: diagnosticInfo,
-      possibleIssues: commonIssues,
-      suggestions: [
-        'Check your Anthropic API key is valid and active',
-        'Verify billing is set up on your Anthropic account',
-        'Ensure your API key has sufficient credits',
-        'Try again in a few minutes in case of temporary service issues'
-      ]
+    // Estimate word count
+    const estimatedWordCount = generatedContent.split(/\s+/).length;
+
+    console.log(`Content generated successfully: ${estimatedWordCount} words`);
+    
+    return res.status(200).json({
+      success: true,
+      content: generatedContent,
+      metadata: {
+        wordCount: estimatedWordCount,
+        keyword,
+        publication,
+        affiliateLink: affiliateLink || 'None provided',
+        generatedAt: new Date().toISOString()
+      }
     });
 
   } catch (error) {
-    console.error('Critical error in API handler:', error);
+    console.error('Error in generate-content API:', error);
     return res.status(500).json({ 
-      error: 'Critical system error',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: 'Internal server error',
+      message: error.message 
     });
   }
 }
