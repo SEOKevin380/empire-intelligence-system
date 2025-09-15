@@ -30,64 +30,65 @@ export default async function handler(req, res) {
 
     const targetWords = parseInt(wordCount) || 8000;
 
-    // Enhanced prompt with specific requirements
-    const prompt = `You are a world-class content writer specializing in SEO-optimized, affiliate-ready articles. Create a comprehensive ${targetWords}-word article about "${keyword}" using ONLY the provided source material as your factual foundation.
+    // Enhanced prompt with all your requirements
+    const prompt = `You are a world-class content writer specializing in SEO-optimized, conversion-focused articles. Create a comprehensive ${targetWords}-word article about "${keyword}" using ONLY the provided source material as your factual foundation.
 
 CRITICAL REQUIREMENTS:
 
-1. AFFILIATE LINK INTEGRATION: Include the affiliate link "${affiliateLink}" naturally throughout the content at least 3-4 times with compelling call-to-action phrases.
+1. AFFILIATE LINK INTEGRATION: Include the affiliate link "${affiliateLink}" naturally throughout the content at least 3-4 times with compelling call-to-action phrases like "discover more here", "get started today", "learn more", etc.
 
-2. "IN THIS ARTICLE" SECTION: Create a clean, professional section titled "In This Article, You'll Discover:" featuring 6-7 sentence-style points. DO NOT use bullet symbols (•, –, *, etc.) or emojis. Each line should be a full sentence starting with a capital letter, formatted as standalone lines without special characters. Example format:
-"In This Article, You'll Discover:
-What mushroom gummies are and why they're becoming essential for modern wellness
-The complete ingredient breakdown of the top-rated mushroom gummies on the market
-How these supplements support weight loss, focus, and stress management simultaneously"
+2. "IN THIS ARTICLE" SECTION - EXACT FORMAT:
+Create a section titled "In This Article, You'll Discover:" with 6-7 sentence-style points. 
+DO NOT use bullet symbols (•, –, *, etc.) or emojis. 
+Each line should be a complete sentence starting with a capital letter.
+Format as standalone lines with no special characters in front.
 
-3. FOUR-GOAL STRUCTURE: Organize content around these 4 primary goals:
+3. FOUR-GOAL STRUCTURE: 
    - Goal 1: Educate about ${keyword} and their benefits
-   - Goal 2: Build trust through science and testimonials  
-   - Goal 3: Address concerns and comparisons
-   - Goal 4: Drive action with clear purchasing guidance
+   - Goal 2: Build trust through science, ingredients, and testimonials  
+   - Goal 3: Address concerns through comparisons, safety, and FAQs
+   - Goal 4: Drive action with clear purchasing guidance and affiliate links
 
 4. SEO OPTIMIZATION:
-   - Use "${keyword}" as the primary keyword throughout
+   - Use "${keyword}" as primary keyword throughout
    - Include variations like "best ${keyword}", "${keyword} benefits", "${keyword} reviews"
    - Natural keyword density of 1-2%
-   - Compelling meta-worthy title and headers
+   - Compelling headers with keywords
 
 5. CONVERSION ELEMENTS:
-   - Multiple compelling calls-to-action
-   - Urgency and scarcity where appropriate
-   - Social proof and testimonials
+   - Multiple compelling calls-to-action with affiliate link
+   - Social proof and testimonials from source material
    - Clear value propositions
+   - Urgency and scarcity where appropriate
 
 6. PROFESSIONAL STRUCTURE:
-   - Engaging title optimized for SEO
-   - "In This Article, You'll Discover:" section (clean format as specified)
+   - SEO-optimized title
+   - "In This Article, You'll Discover:" section (clean format)
    - TLDR section with key benefits
    - 8-12 substantial sections with descriptive headers
    - FAQ section
-   - Strong conclusion with final CTA
+   - Strong conclusion with affiliate link CTA
 
-7. FACTUAL ACCURACY: Base ALL claims strictly on the provided source material. Do not invent facts, statistics, or claims not supported by the source content.
+7. FACTUAL ACCURACY: Base ALL claims strictly on the provided source material. Do not invent facts not supported by the source.
 
-8. COMPLIANCE: Include appropriate health disclaimers and FTC compliance statements for affiliate content.
+8. COMPLIANCE: Include health disclaimers and FTC affiliate disclosure.
 
-SOURCE MATERIAL TO USE EXCLUSIVELY:
+SOURCE MATERIAL:
 ${sourceMaterial}
 
+AFFILIATE LINK: ${affiliateLink}
 PUBLICATION: ${publication}
-TARGET WORD COUNT: ${targetWords} words
-COMPANY: ${company || 'N/A'}
+TARGET: ${targetWords} words
 
-Create content that drives conversions while maintaining journalistic integrity and SEO best practices. Focus on providing genuine value while naturally guiding readers toward the affiliate link.`;
+Create compelling, conversion-focused content that naturally guides readers to the affiliate link while providing genuine value and maintaining SEO optimization.`;
 
-    console.log('Sending prompt to Claude API...');
+    console.log('Making request to Claude API...');
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY, // This uses your existing environment variable
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
@@ -103,10 +104,10 @@ Create content that drives conversions while maintaining journalistic integrity 
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Claude API Error:', response.status, errorData);
+      console.error('Claude API Error:', response.status, response.statusText, errorData);
       return res.status(500).json({ 
         error: `Content generation failed: ${response.status}`,
-        details: errorData
+        details: errorData.error || response.statusText
       });
     }
 
@@ -115,18 +116,19 @@ Create content that drives conversions while maintaining journalistic integrity 
 
     if (!generatedContent) {
       console.error('No content in Claude response:', data);
-      return res.status(500).json({ error: 'No content generated' });
+      return res.status(500).json({ error: 'No content generated from API' });
     }
 
     // Estimate word count
-    const wordCount_estimate = generatedContent.split(/\s+/).length;
+    const estimatedWordCount = generatedContent.split(/\s+/).length;
 
-    console.log('Content generated successfully');
+    console.log(`Content generated successfully: ${estimatedWordCount} words`);
+    
     return res.status(200).json({
       success: true,
       content: generatedContent,
       metadata: {
-        wordCount: wordCount_estimate,
+        wordCount: estimatedWordCount,
         keyword,
         publication,
         affiliateLink: affiliateLink || 'None provided',
