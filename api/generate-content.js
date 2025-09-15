@@ -1,13 +1,11 @@
-// api/generate-content.js - WORKING VERSION
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
@@ -15,159 +13,132 @@ export default async function handler(req, res) {
   }
 
   try {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return res.status(500).json({ error: 'API key not configured' });
-    }
+    const { keyword, sourceMaterial, affiliateLink, wordCount, publication, company, email, phone } = req.body;
 
-    const data = req.body || {};
-    console.log('Received data fields:', Object.keys(data));
-
-    // Extract values directly from the exact field names
-    const keyword = String(data.keyword || '').trim();
-    const sourceMaterial = String(data.sourceMaterial || '').trim();
-    const affiliateLink = String(data.affiliateLink || '').trim();
-    const wordCount = parseInt(data.wordCount) || 8000;
-
-    console.log('Extracted values:');
-    console.log('- Keyword:', keyword);
-    console.log('- Source Material length:', sourceMaterial.length);
-    console.log('- Affiliate Link:', affiliateLink);
-    console.log('- Word Count:', wordCount);
-
-    // Validation with detailed logging
-    if (!keyword || keyword.length === 0) {
-      console.log('VALIDATION FAILED: Keyword empty');
-      return res.status(400).json({ 
-        error: 'Keyword is required',
-        received: keyword,
-        length: keyword.length
-      });
+    // Validation
+    if (!keyword) {
+      return res.status(400).json({ error: 'Keyword is required' });
     }
 
     if (!sourceMaterial || sourceMaterial.length < 50) {
-      console.log('VALIDATION FAILED: Source material too short');
-      return res.status(400).json({ 
-        error: 'Source material must be at least 50 characters',
-        received_length: sourceMaterial.length
-      });
+      return res.status(400).json({ error: 'Source material must be at least 50 characters' });
     }
 
-    console.log('✅ Validation passed, generating content...');
+    if (!publication) {
+      return res.status(400).json({ error: 'Publication is required' });
+    }
 
-    // Build the SEO-optimized prompt using your source material
-    const prompt = `You are an expert content writer and SEO specialist. Create a comprehensive, SEO-optimized article following these EXACT requirements:
+    const targetWords = parseInt(wordCount) || 8000;
 
-CRITICAL INSTRUCTION: Base this article entirely on the provided source material. Ensure 100% factual accuracy to the source content.
+    // Enhanced prompt with specific requirements
+    const prompt = `You are a world-class content writer specializing in SEO-optimized, affiliate-ready articles. Create a comprehensive ${targetWords}-word article about "${keyword}" using ONLY the provided source material as your factual foundation.
 
-ARTICLE SPECIFICATIONS:
-- Focus Keyword: "${keyword}"
-- Target Word Count: ${wordCount} words minimum
-- Format: Professional, SEO-optimized article
-- Niche: Health & Wellness Supplements
+CRITICAL REQUIREMENTS:
 
-SOURCE MATERIAL (MUST BE 100% ACCURATE):
+1. AFFILIATE LINK INTEGRATION: Include the affiliate link "${affiliateLink}" naturally throughout the content at least 3-4 times with compelling call-to-action phrases.
+
+2. "IN THIS ARTICLE" SECTION: Create a clean, professional section titled "In This Article, You'll Discover:" featuring 6-7 sentence-style points. DO NOT use bullet symbols (•, –, *, etc.) or emojis. Each line should be a full sentence starting with a capital letter, formatted as standalone lines without special characters. Example format:
+"In This Article, You'll Discover:
+What mushroom gummies are and why they're becoming essential for modern wellness
+The complete ingredient breakdown of the top-rated mushroom gummies on the market
+How these supplements support weight loss, focus, and stress management simultaneously"
+
+3. FOUR-GOAL STRUCTURE: Organize content around these 4 primary goals:
+   - Goal 1: Educate about ${keyword} and their benefits
+   - Goal 2: Build trust through science and testimonials  
+   - Goal 3: Address concerns and comparisons
+   - Goal 4: Drive action with clear purchasing guidance
+
+4. SEO OPTIMIZATION:
+   - Use "${keyword}" as the primary keyword throughout
+   - Include variations like "best ${keyword}", "${keyword} benefits", "${keyword} reviews"
+   - Natural keyword density of 1-2%
+   - Compelling meta-worthy title and headers
+
+5. CONVERSION ELEMENTS:
+   - Multiple compelling calls-to-action
+   - Urgency and scarcity where appropriate
+   - Social proof and testimonials
+   - Clear value propositions
+
+6. PROFESSIONAL STRUCTURE:
+   - Engaging title optimized for SEO
+   - "In This Article, You'll Discover:" section (clean format as specified)
+   - TLDR section with key benefits
+   - 8-12 substantial sections with descriptive headers
+   - FAQ section
+   - Strong conclusion with final CTA
+
+7. FACTUAL ACCURACY: Base ALL claims strictly on the provided source material. Do not invent facts, statistics, or claims not supported by the source content.
+
+8. COMPLIANCE: Include appropriate health disclaimers and FTC compliance statements for affiliate content.
+
+SOURCE MATERIAL TO USE EXCLUSIVELY:
 ${sourceMaterial}
 
-${affiliateLink ? `AFFILIATE LINK TO INTEGRATE: ${affiliateLink}` : ''}
+PUBLICATION: ${publication}
+TARGET WORD COUNT: ${targetWords} words
+COMPANY: ${company || 'N/A'}
 
-MANDATORY ARTICLE STRUCTURE:
-1. **In This Article, You'll Discover:** (5-8 bullet points based on source material)
-2. **TLDR Summary** (2-3 sentences with focus keyword, based on source material)
-3. **Introduction** (Engaging hook using source material facts)
-4. **What Are ${keyword}?** (Comprehensive explanation from source material)
-5. **Key Benefits of ${keyword}** (Only benefits from source material)
-6. **How ${keyword} Work** (Mechanism from source material)
-7. **${keyword} Ingredients and Science** (Based on source material)
-8. **${keyword} vs Alternatives** (Only if mentioned in source)
-9. **How to Use ${keyword}** (Usage info from source material)
-10. **Safety and Side Effects** (From source + required disclaimers)
-11. **Where to Buy ${keyword}** (Include affiliate link if provided)
-12. **Frequently Asked Questions** (Based on source material)
-13. **Final Thoughts and Recommendations**
+Create content that drives conversions while maintaining journalistic integrity and SEO best practices. Focus on providing genuine value while naturally guiding readers toward the affiliate link.`;
 
-FORMATTING REQUIREMENTS:
-- **Bold all headings** using **text**
-- **Bold important links** and key terms
-- NO emojis - professional formatting only
-- Minimum ${wordCount} words
-- Natural keyword density (1-2% for "${keyword}")
-- Include semantic variations from source material
+    console.log('Sending prompt to Claude API...');
 
-REQUIRED DISCLAIMERS:
-- Health: "This information is not intended to diagnose, treat, cure, or prevent any disease. Consult with a healthcare professional before starting any new supplement regimen."
-- Pricing: "Prices are subject to change. Please check the official website for current pricing information."
-- Individual Results: "Individual results may vary based on personal factors and consistency of use."
-
-SEO OPTIMIZATION:
-- Include "${keyword}" naturally throughout content
-- Use related terms from source material as LSI keywords
-- Create compelling, descriptive headings
-- Add conversion-focused calls to action
-- Include internal linking opportunities where relevant
-
-ACCURACY REQUIREMENTS:
-- Use ONLY information from the provided source material
-- Do NOT add claims not supported by the source
-- If expanding on source points, clearly indicate when making logical extensions
-- Maintain 100% factual accuracy to source content
-
-Create the complete, comprehensive article now, ensuring it meets the minimum word count by thoroughly explaining all concepts from the source material:`;
-
-    const messages = [{ role: "user", content: prompt }];
-
-    console.log('Sending request to Anthropic API...');
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01"
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: 'claude-sonnet-4-20250514',
         max_tokens: 8000,
-        messages: messages,
-        temperature: 0.3
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ]
       })
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Anthropic API Error:', response.status, errorText);
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Claude API Error:', response.status, errorData);
       return res.status(500).json({ 
-        error: 'Content generation failed',
-        status: response.status,
-        details: errorText.substring(0, 300)
+        error: `Content generation failed: ${response.status}`,
+        details: errorData
       });
     }
 
-    const result = await response.json();
-    const content = result.content[0].text;
-    const actualWordCount = content.split(' ').length;
+    const data = await response.json();
+    const generatedContent = data.content?.[0]?.text;
 
-    console.log('✅ Content generated successfully');
-    console.log('Word count:', actualWordCount);
+    if (!generatedContent) {
+      console.error('No content in Claude response:', data);
+      return res.status(500).json({ error: 'No content generated' });
+    }
 
+    // Estimate word count
+    const wordCount_estimate = generatedContent.split(/\s+/).length;
+
+    console.log('Content generated successfully');
     return res.status(200).json({
       success: true,
-      content: content,
+      content: generatedContent,
       metadata: {
-        wordCount: actualWordCount,
-        targetWordCount: wordCount,
-        keyword: keyword,
-        sourceMaterialLength: sourceMaterial.length,
-        hasAffiliateLink: !!affiliateLink,
+        wordCount: wordCount_estimate,
+        keyword,
+        publication,
+        affiliateLink: affiliateLink || 'None provided',
         generatedAt: new Date().toISOString()
       }
     });
 
   } catch (error) {
-    console.error('Server error:', error);
+    console.error('Error in generate-content API:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
-      timestamp: new Date().toISOString()
+      message: error.message 
     });
   }
 }
